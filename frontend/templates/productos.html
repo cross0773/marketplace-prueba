@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="h4 mb-3">Productos</h2>
+<div id="product-messages" class="alert d-none" role="alert"></div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form id="form-producto" class="row g-3">
+      <div class="col-12"><h5 class="card-title">Agregar Nuevo Producto</h5></div>
+      <div class="col-md-6">
+        <label class="form-label">Nombre</label>
+        <input class="form-control" name="nombre" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Categoría</label>
+        <input class="form-control" name="categoria" required>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Descripción</label>
+        <textarea class="form-control" name="descripcion" rows="2" required></textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Precio</label>
+        <input class="form-control" name="precio" type="number" step="0.01" required>
+      </div>
+      <div class="col-md-6 d-flex align-items-end">
+        <button type="submit" class="btn btn-success w-100">Agregar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Listado</span>
+    <button id="btn-refresh" class="btn btn-outline-primary btn-sm">Actualizar</button>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th class="text-end">Precio</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-productos"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>const productMessages = document.getElementById('product-messages');
+
+function showMessage(message, type = 'success') {
+  productMessages.textContent = message;
+  productMessages.className = `alert alert-${type}`;
+  productMessages.classList.remove('d-none');
+  setTimeout(() => {
+    productMessages.classList.add('d-none');
+  }, 5000); // Ocultar mensaje después de 5 segundos
+}
+
+async function fetchProductos() {
+  try {
+    const res = await fetch(`${GATEWAY_URL}/api/v1/productos/`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(`Error al cargar productos: ${errorData.detail || res.statusText}`);
+    }
+    
+    const data = await res.json();
+    const tbody = document.getElementById('tbody-productos');
+    tbody.innerHTML = '';
+    
+    // Verifica si la respuesta es un mensaje en lugar de una lista de productos
+    if (data.message) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center text-muted">${data.message}</td>
+        </tr>`;
+      return;
+    }
+    
+    // Si hay productos, mostrarlos
+    const productos = Array.isArray(data) ? data : (data.items || []);
+    
+    if (productos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center text-muted">No hay productos disponibles</td>
+        </tr>`;
+      return;
+    }
+    
+    productos.forEach(p => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${p.id ?? ''}</td>
+          <td>${p.nombre ?? ''}</td>
+          <td class="text-end">${p.precio?.toFixed ? p.precio.toFixed(2) : p.precio}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteProducto('${p.id}')">Eliminar</button>
+          </td>
+        </tr>`;
+    });
+    
+  } catch (error) {
+    showMessage(error.message, 'danger');
+  }
+}
+
+async function deleteProducto(id) {
+  try {
+    const res = await fetch(`${GATEWAY_URL}/api/v1/productos/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(`Error al eliminar producto: ${errorData.detail || res.statusText}`);
+    }
+    showMessage('Producto eliminado con éxito.');
+    fetchProductos();
+  } catch (error) {
+    showMessage(error.message, 'danger');
+  }
+}
+
+document.getElementById('form-producto').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = {
+    nombre: fd.get('nombre'),
+    descripcion: fd.get('descripcion'),
+    categoria: fd.get('categoria'),
+    precio: parseFloat(fd.get('precio'))
+  };
+  try {
+    const res = await fetch(`${GATEWAY_URL}/api/v1/productos/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(`Error al agregar producto: ${errorData.detail || res.statusText}`);
+    }
+    showMessage('Producto agregado con éxito.');
+    e.target.reset();
+    fetchProductos();
+  } catch (error) {
+    showMessage(error.message, 'danger');
+  }
+});
+
+document.getElementById('btn-refresh').addEventListener('click', fetchProductos);
+fetchProductos();
+</script>
+{% endblock %}

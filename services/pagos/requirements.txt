@@ -1,0 +1,7 @@
+# Dependencias básicas para un servicio FastAPI
+fastapi
+uvicorn
+
+sqlalchemy
+psycopg2-binary
+pydantic[email]

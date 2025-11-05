@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="h4 mb-3">Pedidos</h2>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form id="form-pedido" class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">ID Usuario</label>
+        <input class="form-control" name="id_usuario" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">ID Producto</label>
+        <input class="form-control" name="id_producto" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Cantidad</label>
+        <input class="form-control" name="cantidad" type="number" value="1" min="1" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Monto Total</label>
+        <input class="form-control" name="monto_total" type="number" value="100" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Estado</label>
+        <input class="form-control" name="estado" value="pending" required>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-success w-100">Crear</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Listado</span>
+    <button id="btn-refresh" class="btn btn-outline-primary btn-sm">Actualizar</button>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>ID Producto</th>
+            <th>Cantidad</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-pedidos"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function fetchPedidos() {
+  try {
+    const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    const data = await res.json();
+    const tbody = document.getElementById('tbody-pedidos');
+    tbody.innerHTML = '';
+    (Array.isArray(data) ? data : data.items || []).forEach(p => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${p.id ?? ''}</td>
+          <td>${p.id_producto ?? ''}</td>
+          <td>${p.cantidad ?? ''}</td>
+          <td>${p.estado ?? ''}</td>
+        </tr>`;
+    });
+  } catch (error) {
+    console.error("Error al cargar pedidos:", error);
+    alert("No se pudieron cargar los pedidos. ¿Has iniciado sesión?");
+  }
+}
+
+document.getElementById('form-pedido').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = {
+    id_usuario: parseInt(fd.get('id_usuario')),
+    id_producto: parseInt(fd.get('id_producto')),
+    cantidad: parseInt(fd.get('cantidad')),
+    monto_total: parseInt(fd.get('monto_total')),
+    estado: fd.get('estado')
+  };
+  try {
+    const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(`Error al crear pedido: ${errorData.detail || res.statusText}`);
+    }
+    e.target.reset();
+    fetchPedidos();
+  } catch (error) {
+    console.error("Error al crear pedido:", error);
+    alert(error.message);
+  }
+});
+
+document.getElementById('btn-refresh').addEventListener('click', fetchPedidos);
+fetchPedidos();
+</script>
+{% endblock %}

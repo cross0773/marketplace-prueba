@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="h4 mb-3">Panel del API Gateway</h2>
+
+<div class="card mb-4">
+  <div class="card-header">Estado</div>
+  <div class="card-body">
+    <pre class="mb-0">{{ health | tojson(indent=2) }}</pre>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">Probar Rutas</div>
+  <div class="card-body">
+    <form id="form-proxy" class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Método</label>
+        <select class="form-select" name="method">
+          <option>GET</option>
+          <option>POST</option>
+          <option>PUT</option>
+          <option>DELETE</option>
+        </select>
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Path del Gateway</label>
+        <input class="form-control" name="path" placeholder="/productos" value="/health">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Body (JSON opcional)</label>
+        <textarea class="form-control" name="body" rows="4" placeholder='{"ejemplo":1}'></textarea>
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary">Ejecutar</button>
+      </div>
+    </form>
+    <hr>
+    <h6>Respuesta</h6>
+    <pre id="proxy-response" class="bg-body-tertiary p-3 rounded small"></pre>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('form-proxy').addEventListener('submit', async function (event) {
+    // 1. Evita que el formulario recargue la página
+    event.preventDefault();
+
+    const form = event.target;
+    const responseElement = document.getElementById('proxy-response');
+    responseElement.textContent = 'Ejecutando...';
+
+    // 2. Recolecta los datos del formulario
+    const method = form.method.value;
+    const path = form.path.value;
+    const body = form.body.value;
+
+    // La URL pública del gateway que pasamos desde Flask
+    const gatewayUrl = "{{ gateway_url }}";
+    const requestUrl = `${gatewayUrl}${path}`;
+
+    // 3. Prepara las opciones para la petición (incluyendo el token si existe)
+    const headers = { 'Accept': 'application/json' };
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const fetchOptions = {
+      method: method,
+      headers: headers,
+    };
+
+    // Si es POST o PUT y hay un body, lo añadimos
+    if ((method === 'POST' || method === 'PUT') && body) {
+      try {
+        JSON.parse(body); // Validamos que sea un JSON
+        headers['Content-Type'] = 'application/json';
+        fetchOptions.body = body;
+      } catch (e) {
+        responseElement.textContent = 'Error: El Body no es un JSON válido.';
+        return;
+      }
+    }
+
+    // 4. Ejecuta la petición y muestra la respuesta
+    try {
+      const response = await fetch(requestUrl, fetchOptions);
+      // Intenta leer como JSON, si falla, lee como texto
+      const responseData = await response.json().catch(() => response.text());
+      responseElement.textContent = JSON.stringify(responseData, null, 2);
+    } catch (error) {
+      responseElement.textContent = `Error en la petición: ${error.message}`;
+    }
+  });
+</script>
+{% endblock %}

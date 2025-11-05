@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="h4 mb-3">Autenticación</h2>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Registro</div>
+      <div class="card-body">
+        <form id="form-register" class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Email</label>
+            <input class="form-control" name="email" type="email" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Password</label>
+            <input class="form-control" name="password" type="password" required>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-success">Registrarse</button>
+          </div>
+        </form>
+        <pre id="register-resp" class="small bg-body-tertiary p-3 rounded mt-3"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Login</div>
+      <div class="card-body">
+        <form id="form-login" class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Email</label>
+            <input class="form-control" name="email" type="email" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Password</label>
+            <input class="form-control" name="password" type="password" required>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary">Iniciar sesión</button>
+          </div>
+        </form>
+        <pre id="login-resp" class="small bg-body-tertiary p-3 rounded mt-3"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /**
+   * Maneja el envío de formularios de autenticación (registro y login).
+   * @param {Event} event - El evento de envío del formulario.
+   * @param {string} endpoint - La ruta del API a la que se enviará la petición.
+   * @param {string} responseElementId - El ID del elemento donde se mostrará la respuesta.
+   */
+  async function handleAuthFormSubmit(event, endpoint, responseElementId) {
+    event.preventDefault();
+    const form = event.target;
+    const responseElement = document.getElementById(responseElementId);
+    responseElement.textContent = 'Procesando...';
+
+    // Para el login, usamos form-data con username y password
+    // Para el registro, usamos JSON con email, username y password
+    let requestData;
+    let headers = {};
+    
+    if (endpoint === '/login') {
+      // Para login: usar form-data
+      const formData = new FormData();
+      formData.append('username', form.email.value); // El backend espera 'username' pero con el email
+      formData.append('password', form.password.value);
+      requestData = formData;
+      // No establecer Content-Type, el navegador lo hará automáticamente con el boundary
+    } else {
+      // Para registro: usar JSON
+      const email = form.email.value;
+      const username = email.split('@')[0];
+      requestData = {
+        email: email,
+        username: username,
+        password: form.password.value
+      };
+      headers['Content-Type'] = 'application/json';
+      requestData = JSON.stringify(requestData);
+    }
+    
+    console.log('Datos a enviar:', requestData);
+
+    try {
+      const response = await fetch(`http://localhost:8001${endpoint}`, {
+        method: 'POST',
+        headers: headers,
+        body: requestData,
+      });
+
+      // Intentamos parsear la respuesta como JSON
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        // Si el servidor devuelve un error (ej. 400, 401, 500)
+        const errorDetail = responseData.detail || JSON.stringify(responseData);
+        throw new Error(`Error ${response.status}: ${errorDetail}`);
+      }
+
+      // Si es un login exitoso, guardamos el token y redirigimos
+      if (endpoint.includes('login')) {
+        localStorage.setItem('accessToken', responseData.access_token);
+        responseElement.textContent = 'Login exitoso. Redirigiendo...';
+        window.location.href = '/productos'; // Redirigir a la página de productos
+      } else {
+        // Si es un registro exitoso, mostramos el mensaje y limpiamos el formulario
+        responseElement.textContent = `Registro exitoso: ${JSON.stringify(responseData, null, 2)}`;
+        form.reset();
+      }
+
+    } catch (error) {
+      responseElement.textContent = `Ha ocurrido un error: ${error.message}`;
+    }
+  }
+
+  document.getElementById('form-register').addEventListener('submit', (e) => handleAuthFormSubmit(e, '/register', 'register-resp'));
+  document.getElementById('form-login').addEventListener('submit', (e) => handleAuthFormSubmit(e, '/login', 'login-resp'));
+</script>
+{% endblock %}

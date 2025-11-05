@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="h4 mb-3">Pagos</h2>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form id="form-pago" class="row g-3">
+      <div class="col-md-5">
+        <label class="form-label">ID Usuario</label>
+        <input class="form-control" name="id_usuario" required>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">ID Pedido</label>
+        <input class="form-control" name="id_pedido" required>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Monto</label>
+        <input class="form-control" name="monto" type="number" step="0.01" required>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Método de Pago</label>
+        <input class="form-control" name="metodo_pago" value="credit_card" required>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-success w-100">Pagar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Historial de Pagos</span>
+    <button id="btn-refresh" class="btn btn-outline-primary btn-sm">Actualizar</button>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>ID Pedido</th>
+            <th class="text-end">Monto</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-pagos"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function fetchPagos() {
+  try {
+    const res = await fetch(`${GATEWAY_URL}/api/v1/pagos/`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    const data = await res.json();
+    const tbody = document.getElementById('tbody-pagos');
+    tbody.innerHTML = '';
+    (Array.isArray(data) ? data : data.items || []).forEach(p => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${p.id ?? ''}</td>
+          <td>${p.id_pedido ?? ''}</td>
+          <td class="text-end">${p.monto?.toFixed ? p.monto.toFixed(2) : p.monto}</td>
+          <td>${p.estado ?? ''}</td>
+        </tr>`;
+    });
+  } catch (error) {
+    console.error("Error al cargar pagos:", error);
+    alert("No se pudieron cargar los pagos. ¿Has iniciado sesión?");
+  }
+}
+
+document.getElementById('form-pago').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const payload = {
+    id_usuario: parseInt(fd.get('id_usuario')),
+    id_pedido: parseInt(fd.get('id_pedido')),
+    monto: parseFloat(fd.get('monto')),
+    metodo_pago: fd.get('metodo_pago')
+  };
+  try {
+    const res = await fetch(`${GATEWAY_URL}/api/v1/pagos/`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(`Error al procesar pago: ${errorData.detail || res.statusText}`);
+    }
+    e.target.reset();
+    fetchPagos();
+  } catch (error) {
+    console.error("Error al procesar pago:", error);
+    alert(error.message);
+  }
+});
+
+document.getElementById('btn-refresh').addEventListener('click', fetchPagos);
+fetchPagos();
+</script>
+{% endblock %}
