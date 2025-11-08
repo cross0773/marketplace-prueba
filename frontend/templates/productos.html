@@ -1,40 +1,71 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="h4 mb-3">Productos</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h4 mb-0">Gestión de Artesanías</h2>
+  <button type="button" class="btn btn-primary" id="btn-open-add-modal">
+    <i class="bi bi-plus-circle me-1"></i> Agregar Nueva Artesanía
+  </button>
+</div>
 
-<div class="card mb-4">
-  <div class="card-body">
-    <form id="form-producto" class="row g-3">
-      <input type="hidden" name="id">
-      <div class="col-12 d-flex justify-content-between align-items-center">
-        <h5 id="form-title" class="card-title mb-0">Agregar Nuevo Producto</h5>
-        <button type="button" id="btn-cancel-edit" class="btn btn-sm btn-outline-secondary d-none">Cancelar
-          Edición</button>
+<!-- Modal para Agregar/Editar Producto -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="form-producto">
+        <div class="modal-header">
+          <h5 class="modal-title" id="productModalLabel">Agregar Nueva Artesanía</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre</label>
+              <input class="form-control" name="nombre" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Categoría</label>
+              <input class="form-control" name="categoria" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descripción</label>
+              <textarea class="form-control" name="descripcion" rows="2" required></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Precio</label>
+              <input class="form-control" name="precio" type="number" step="0.01" required>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">URL de Imagen</label>
+              <input class="form-control" name="image" type="url" placeholder="https://ejemplo.com/imagen.jpg">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" id="btn-submit" class="btn btn-primary">Agregar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">Nombre</label>
-        <input class="form-control" name="nombre" required>
+      <div class="modal-body">
+        ¿Estás seguro de que quieres eliminar esta artesanía? Esta acción no se puede deshacer.
       </div>
-      <div class="col-md-6">
-        <label class="form-label">Categoría</label>
-        <input class="form-control" name="categoria" required>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger">Eliminar</button>
       </div>
-      <div class="col-12">
-        <label class="form-label">Descripción</label>
-        <textarea class="form-control" name="descripcion" rows="2" required></textarea>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Precio</label>
-        <input class="form-control" name="precio" type="number" step="0.01" required>
-      </div>
-      <div class="col-md-8">
-        <label class="form-label">URL de Imagen</label>
-        <input class="form-control" name="image" type="url" placeholder="https://ejemplo.com/imagen.jpg">
-      </div>
-      <div class="col-12 d-flex align-items-end">
-        <button type="submit" id="btn-submit" class="btn btn-primary w-100">Agregar Producto</button>
-      </div>
-    </form>
+    </div>
   </div>
 </div>
 
@@ -51,7 +82,7 @@
             <th>ID</th>
             <th>Nombre</th>
             <th>Categoría</th>
-            <th>Imagen</th>
+            <th class="text-center">Imagen</th>
             <th class="text-end">Precio</th>
             <th class="text-end">Acciones</th>
           </tr>
@@ -66,9 +97,10 @@
 {% block scripts %}
 <script>
   const form = document.getElementById('form-producto');
-  const formTitle = document.getElementById('form-title');
+  const productModalEl = document.getElementById('productModal');
+  const productModal = new bootstrap.Modal(productModalEl);
+  const productModalLabel = document.getElementById('productModalLabel');
   const submitButton = document.getElementById('btn-submit');
-  const cancelEditButton = document.getElementById('btn-cancel-edit');
 
   async function fetchProductos() {
     try {
@@ -111,7 +143,7 @@
           <td>${p.id ?? ''}</td>
           <td>${p.nombre ?? ''}</td>
           <td>${p.categoria ?? ''}</td>
-          <td>
+          <td class="text-center">
             <img src="${p.image || 'https://placehold.co/60x60/F4F1DE/3D405B?text=N/A'}" alt="${p.nombre}" width="60" height="60" class="rounded" style="object-fit: cover;">
           </td>
           <td class="text-end">${p.precio?.toFixed ? p.precio.toFixed(2) : p.precio}</td>
@@ -135,48 +167,55 @@
     form.precio.value = producto.precio;
     form.image.value = producto.image || '';
 
-    formTitle.textContent = `Editando Producto #${producto.id}`;
+    productModalLabel.textContent = `Editando Artesanía #${producto.id}`;
     submitButton.textContent = 'Actualizar Producto';
     submitButton.classList.remove('btn-primary');
     submitButton.classList.add('btn-success');
-    cancelEditButton.classList.remove('d-none');
-    window.scrollTo(0, 0); // Sube al inicio de la página para ver el formulario
+    productModal.show();
   }
 
   function resetForm() {
     form.reset();
     form.id.value = '';
-    formTitle.textContent = 'Agregar Nuevo Producto';
+    productModalLabel.textContent = 'Agregar Nueva Artesanía';
     submitButton.textContent = 'Agregar Producto';
     submitButton.classList.remove('btn-success');
     submitButton.classList.add('btn-primary');
-    cancelEditButton.classList.add('d-none');
   }
 
-  async function deleteProducto(id) {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el producto #${id}?`)) return;
+  const deleteConfirmModalEl = document.getElementById('deleteConfirmModal');
+  const deleteConfirmModal = new bootstrap.Modal(deleteConfirmModalEl);
+  const confirmDeleteBtn = document.getElementById('btn-confirm-delete');
 
-    const row = document.getElementById(`producto-row-${id}`);
-    try {
-      const response = await fetch(`${GATEWAY_URL}/api/v1/productos/${id}`, {
-        method: 'DELETE', headers: getAuthHeaders()
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Error al eliminar el producto');
+  async function deleteProducto(id) {
+    // Configura el botón de confirmación para que sepa qué ID eliminar
+    confirmDeleteBtn.onclick = async () => {
+      const row = document.getElementById(`producto-row-${id}`);
+      try {
+        const response = await fetch(`${GATEWAY_URL}/api/v1/productos/${id}`, {
+          method: 'DELETE', headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Error al eliminar el producto');
+        }
+        showToast('Artesanía eliminada con éxito.', 'success');
+        // Animación de desvanecimiento
+        if (row) {
+          row.style.transition = 'opacity 0.5s ease';
+          row.style.opacity = '0';
+          setTimeout(() => row.remove(), 500);
+        } else {
+          fetchProductos(); // Fallback si la fila no se encuentra
+        }
+      } catch (error) {
+        showToast(error.message, 'danger');
+      } finally {
+        deleteConfirmModal.hide();
       }
-      showToast('Producto eliminado con éxito.', 'success');
-      // Animación de desvanecimiento
-      if (row) {
-        row.style.transition = 'opacity 0.5s ease';
-        row.style.opacity = '0';
-        setTimeout(() => row.remove(), 500);
-      } else {
-        fetchProductos(); // Fallback si la fila no se encuentra
-      }
-    } catch (error) {
-      showToast(error.message, 'danger');
-    }
+    };
+    // Muestra el modal de confirmación
+    deleteConfirmModal.show();
   }
 
   form.addEventListener('submit', async (e) => {
@@ -206,20 +245,26 @@
         const actionText = isUpdating ? 'actualizar' : 'agregar';
         throw new Error(`Error al ${actionText} producto: ${errorData.detail || res.statusText}`);
       }
-      const successMessage = isUpdating ? 'Producto actualizado con éxito.' : 'Producto agregado con éxito.';
+      const successMessage = isUpdating ? 'Artesanía actualizada con éxito.' : 'Artesanía agregada con éxito.';
       showToast(successMessage, 'success');
-      resetForm();
+      productModal.hide();
       fetchProductos();
     } catch (error) {
       showToast(error.message, 'danger');
     }
   });
 
+  // Limpia el formulario cuando el modal se cierra
+  productModalEl.addEventListener('hidden.bs.modal', resetForm);
+
+  // Abre el modal en modo "agregar"
+  document.getElementById('btn-open-add-modal').addEventListener('click', () => {
+    productModal.show();
+  });
+
   // Alias para las funciones para que sean accesibles desde el HTML (onclick)
   window.editProducto = editProducto;
   window.deleteProducto = deleteProducto;
-
-  cancelEditButton.addEventListener('click', resetForm);
   document.getElementById('btn-refresh').addEventListener('click', fetchProductos);
   fetchProductos();
 </script>
