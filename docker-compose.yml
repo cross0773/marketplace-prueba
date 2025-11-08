@@ -1,10 +1,10 @@
 services:
-
+  # Frontend service (Flask)
   frontend:
     build: ./frontend
     container_name: frontend
     ports:
-      - "5000:5000" # Puerto para el frontend
+      - "5000:5000"
     environment:
       - API_GATEWAY_URL_PUBLIC=${API_GATEWAY_URL_PUBLIC}
     depends_on:
@@ -12,11 +12,12 @@ services:
     networks:
       - app-network
 
+  # API Gateway (FastAPI)
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
     ports:
-      - "8000:8000" # Puerto para el API Gateway
+      - "8000:8000"
     depends_on:
       - auth-service
       - pagos-service
@@ -30,7 +31,7 @@ services:
     networks:
       - app-network
 
-  # Microservicio de Autenticación
+  # Authentication microservice
   auth-service:
     build: ./services/authentication
     container_name: auth-service
@@ -41,10 +42,12 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
+    volumes:
+      - ./common:/app/common
     networks:
       - app-network
 
-  # Base de datos para el servicio de autenticación
+  # Database for authentication service (MongoDB)
   auth-db:
     image: mongo:latest
     container_name: auth-db
@@ -60,11 +63,9 @@ services:
     networks:
       - app-network
 
-  # --- Plantillas de Microservicios ---
-  
-  # Microservicio de pagos
+  # Payments microservice
   pagos-service:
-    build: ./services/pagos 
+    build: ./services/pagos
     container_name: pagos-service
     ports:
       - "8002:8002"
@@ -73,10 +74,12 @@ services:
     depends_on:
       pagos-db:
         condition: service_healthy
+    volumes:
+      - ./common:/app/common
     networks:
       - app-network
 
-  # Base de datos para el servicio de pagos
+  # Database for payments service (PostgreSQL)
   pagos-db:
     image: postgres:latest
     container_name: pagos-db
@@ -85,66 +88,70 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${PAGOS_DB_NAME}
     ports:
-      - "5434:5432"  # Puerto externo 5434 para evitar conflicto
+      - "5434:5432"
     volumes:
       - pagos_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PAGOS_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PAGOS_DB_NAME} -q"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - app-network
-  
-  # Microservicio de pedidos
+
+  # Orders microservice
   pedidos-service:
-    build: ./services/pedidos 
+    build: ./services/pedidos
     container_name: pedidos-service
+    ports:
+      - "8003:8003"
     environment:
       - DATABASE_URL=${PEDIDOS_DB_URL}
-    ports:
-      - "8003:8003" # Puerto correcto para el servicio de pedidos
     depends_on:
       pedidos-db:
         condition: service_healthy
+    volumes:
+      - ./common:/app/common
     networks:
       - app-network
 
-  # Base de datos para el servicio de pedidos
-  pedidos-db: # Nombre del servicio para pedidos
+  # Database for orders service (PostgreSQL)
+  pedidos-db:
     image: postgres:latest
-    container_name: pedidos-db # Nombre del contenedor para pedidos
+    container_name: pedidos-db
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${PEDIDOS_DB_NAME}
     ports:
-      - "5432:5432"  # Puerto externo para la base de datos de pedidos
+      - "5435:5432"
     volumes:
       - pedidos_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PEDIDOS_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PEDIDOS_DB_NAME} -q"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - app-network
 
-  # Microservicio de productos
+  # Products microservice
   productos-service:
-    build: ./services/productos 
+    build: ./services/productos
     container_name: productos-service
+    ports:
+      - "8004:8004"
     environment:
       - DATABASE_URL=${PRODUCTOS_DB_URL}
-    ports:
-      - "8004:8004" # Puerto correcto para el servicio de productos
     depends_on:
       productos-db:
         condition: service_healthy
+    volumes:
+      - ./common:/app/common
     networks:
       - app-network
 
-  # Base de datos para el servicio de productos
+  # Database for products service (PostgreSQL)
   productos-db:
     image: postgres:latest
     container_name: productos-db
@@ -153,24 +160,25 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${PRODUCTOS_DB_NAME}
     ports:
-      - "5433:5432"  # Puerto 5432 para productos (diferente a pagos)
+      - "5433:5432"
     volumes:
       - productos_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PRODUCTOS_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PRODUCTOS_DB_NAME} -q"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - app-network
 
+# Docker network
 networks:
   app-network:
     driver: bridge
 
+# Docker volumes
 volumes:
   auth_data:
   pagos_data:
   pedidos_data:
   productos_data:
-

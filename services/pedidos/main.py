@@ -6,10 +6,13 @@ from models import Order, OrderCreate, OrderRead, OrderUpdate, Base
 from typing import List
 
 # Configuración de la base de datos
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5433/pedidos_db")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://user:password@localhost:5432/pedidos_db"
+)
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
+
 
 def get_db():
     db = SessionLocal()
@@ -18,8 +21,10 @@ def get_db():
     finally:
         db.close()
 
+
 app = FastAPI()
 router = APIRouter()
+
 
 # Endpoint de salud
 @router.get("/health")
@@ -32,6 +37,7 @@ def health_check():
 async def get_orders(db: Session = Depends(get_db)):
     return db.query(Order).all()
 
+
 @router.post("/", response_model=OrderRead)
 async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     db_order = Order(**order.dict())
@@ -39,6 +45,7 @@ async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_order)
     return db_order
+
 
 @router.put("/{id}", response_model=OrderRead)
 async def update_order(id: int, order: OrderUpdate, db: Session = Depends(get_db)):
@@ -51,6 +58,7 @@ async def update_order(id: int, order: OrderUpdate, db: Session = Depends(get_db
     db.refresh(db_order)
     return db_order
 
+
 @router.delete("/{id}")
 async def delete_order(id: int, db: Session = Depends(get_db)):
     db_order = db.query(Order).filter(Order.id == id).first()
@@ -59,6 +67,7 @@ async def delete_order(id: int, db: Session = Depends(get_db)):
     db.delete(db_order)
     db.commit()
     return {"message": "Pedido eliminado correctamente"}
+
 
 # Incluir el enrutador
 app.include_router(router)

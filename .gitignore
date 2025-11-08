@@ -1,0 +1,20 @@
+# Archivos de entorno
+# Contiene secretos y configuraciones locales. ¡Nunca debe subirse!
+.env
+
+# Archivos generados por Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Carpetas de entornos virtuales
+venv/
+env/
+
+# Carpetas de configuración de IDEs
+.vscode/
+.idea/
+
+# Scripts locales o de utilidad personal
+*.sh

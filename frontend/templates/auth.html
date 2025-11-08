@@ -68,7 +68,7 @@
     // Para el registro, usamos JSON con email, username y password
     let requestData;
     let headers = {};
-    
+
     if (endpoint === '/login') {
       // Para login: usar form-data
       const formData = new FormData();
@@ -88,11 +88,11 @@
       headers['Content-Type'] = 'application/json';
       requestData = JSON.stringify(requestData);
     }
-    
+
     console.log('Datos a enviar:', requestData);
 
     try {
-      const response = await fetch(`http://localhost:8001${endpoint}`, {
+      const response = await fetch(`${GATEWAY_URL}/api/v1/auth${endpoint}`, {
         method: 'POST',
         headers: headers,
         body: requestData,

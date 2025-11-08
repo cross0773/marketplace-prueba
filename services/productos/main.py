@@ -7,16 +7,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, Producto, ProductoCreate, ProductoUpdate, ProductoResponse
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/productos_db")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://user:password@localhost:5433/productos_db"
+)
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
+
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 app = FastAPI()
 
@@ -33,11 +38,11 @@ app.add_middleware(
 router = APIRouter()
 
 
-
 @app.get("/health")
 def health_check():
     """Endpoint de salud para verificar el estado del servicio."""
     return {"status": "ok"}
+
 
 # Endpoints en el router para productos
 @router.get("/", response_model=list[ProductoResponse])
@@ -46,7 +51,9 @@ async def get_productos(db: Session = Depends(get_db)):
         productos = db.query(Producto).all()
         return productos
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener productos: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error al obtener productos: {str(e)}"
+        )
 
 
 @router.post("/", response_model=ProductoResponse)
@@ -57,8 +64,11 @@ async def create_producto(producto: ProductoCreate, db: Session = Depends(get_db
     db.refresh(new_producto)
     return new_producto
 
+
 @router.put("/{id}", response_model=ProductoResponse)
-async def update_producto(id: int, producto: ProductoUpdate, db: Session = Depends(get_db)):
+async def update_producto(
+    id: int, producto: ProductoUpdate, db: Session = Depends(get_db)
+):
     db_producto = db.query(Producto).filter(Producto.id == id).first()
     if not db_producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -68,6 +78,7 @@ async def update_producto(id: int, producto: ProductoUpdate, db: Session = Depen
     db.refresh(db_producto)
     return db_producto
 
+
 @router.delete("/{id}")
 async def delete_producto(id: int, db: Session = Depends(get_db)):
     db_producto = db.query(Producto).filter(Producto.id == id).first()
@@ -76,8 +87,6 @@ async def delete_producto(id: int, db: Session = Depends(get_db)):
     db.delete(db_producto)
     db.commit()
     return {"message": "Producto eliminado"}
-    
-
 
 
 app.include_router(router)

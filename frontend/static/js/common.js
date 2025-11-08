@@ -21,17 +21,17 @@ function getAuthHeaders() {
  */
 async function fetchProductos() {
   try {
-    const response = await fetch('http://localhost:8000/api/v1/productos/', {
+    const response = await fetch(`${window.GATEWAY_URL}/api/v1/productos/`, {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include'
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.detail || 'Error al cargar los productos');
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Error en fetchProductos:', error);
