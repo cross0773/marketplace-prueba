@@ -39,6 +39,34 @@ async function fetchProductos() {
   }
 }
 
+/**
+ * Muestra una notificación (toast) en la pantalla.
+ * @param {string} message - El mensaje a mostrar.
+ * @param {string} type - El tipo de notificación ('success', 'danger', 'info', 'warning').
+ */
+function showToast(message, type = 'info') {
+  const toastContainer = document.querySelector('.toast-container');
+  if (!toastContainer) return;
+
+  const toastId = `toast-${Date.now()}`;
+  const toastHTML = `
+    <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  `;
+
+  toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+  const toastElement = document.getElementById(toastId);
+  const toast = new bootstrap.Toast(toastElement, { delay: 5000 }); // Se oculta a los 5 segundos
+  toast.show();
+}
+
 // Asegúrate de que las funciones estén disponibles globalmente si es necesario
 window.getAuthHeaders = getAuthHeaders;
 window.fetchProductos = fetchProductos;
+window.showToast = showToast;

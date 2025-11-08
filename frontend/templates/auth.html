@@ -1,57 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="h4 mb-3">Autenticación</h2>
-
-<div class="row g-4">
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header">Registro</div>
-      <div class="card-body">
-        <form id="form-register" class="row g-3">
-          <div class="col-12">
-            <label class="form-label">Email</label>
-            <input class="form-control" name="email" type="email" required>
+<div class="auth-page">
+  <div class="container">
+    <div class="row justify-content-center g-4">
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header text-center h4">Registro</div>
+          <div class="card-body">
+            <form id="form-register" class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Email</label>
+                <input class="form-control" name="email" type="email" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Password</label>
+                <input class="form-control" name="password" type="password" required>
+              </div>
+              <div class="col-12">
+                <button class="btn btn-success w-100">Registrarse</button>
+              </div>
+            </form>
+            <pre id="register-resp" class="small bg-body-tertiary p-3 rounded mt-3 d-none"></pre>
           </div>
-          <div class="col-12">
-            <label class="form-label">Password</label>
-            <input class="form-control" name="password" type="password" required>
-          </div>
-          <div class="col-12">
-            <button class="btn btn-success">Registrarse</button>
-          </div>
-        </form>
-        <pre id="register-resp" class="small bg-body-tertiary p-3 rounded mt-3"></pre>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header">Login</div>
-      <div class="card-body">
-        <form id="form-login" class="row g-3">
-          <div class="col-12">
-            <label class="form-label">Email</label>
-            <input class="form-control" name="email" type="email" required>
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header text-center h4">Login</div>
+          <div class="card-body">
+            <form id="form-login" class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Email</label>
+                <input class="form-control" name="email" type="email" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Password</label>
+                <input class="form-control" name="password" type="password" required>
+              </div>
+              <div class="col-12">
+                <button class="btn btn-primary w-100">Iniciar sesión</button>
+              </div>
+            </form>
+            <pre id="login-resp" class="small bg-body-tertiary p-3 rounded mt-3 d-none"></pre>
           </div>
-          <div class="col-12">
-            <label class="form-label">Password</label>
-            <input class="form-control" name="password" type="password" required>
-          </div>
-          <div class="col-12">
-            <button class="btn btn-primary">Iniciar sesión</button>
-          </div>
-        </form>
-        <pre id="login-resp" class="small bg-body-tertiary p-3 rounded mt-3"></pre>
+        </div>
       </div>
     </div>
   </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
+  // Ocultar el footer en la página de autenticación
+  document.querySelector('footer').style.display = 'none';
+
   /**
    * Maneja el envío de formularios de autenticación (registro y login).
    * @param {Event} event - El evento de envío del formulario.
@@ -62,6 +65,7 @@
     event.preventDefault();
     const form = event.target;
     const responseElement = document.getElementById(responseElementId);
+    responseElement.classList.remove('d-none');
     responseElement.textContent = 'Procesando...';
 
     // Para el login, usamos form-data con username y password
@@ -119,11 +123,28 @@
       }
 
     } catch (error) {
-      responseElement.textContent = `Ha ocurrido un error: ${error.message}`;
+      const errorMessage = `Ha ocurrido un error: ${error.message}`;
+      responseElement.textContent = errorMessage;
+      showToast(errorMessage, 'danger');
     }
   }
 
   document.getElementById('form-register').addEventListener('submit', (e) => handleAuthFormSubmit(e, '/register', 'register-resp'));
   document.getElementById('form-login').addEventListener('submit', (e) => handleAuthFormSubmit(e, '/login', 'login-resp'));
+
+  // Mostrar notificación si hay un mensaje en la URL
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const message = urlParams.get('message');
+    const messageType = urlParams.get('type') || 'info'; // 'info' por defecto
+
+    if (message) {
+      // El endpoint de auth devuelve "Not authenticated". Lo personalizamos.
+      const displayMessage = message === "Not authenticated"
+        ? "Debes iniciar sesión para acceder a esta página."
+        : message;
+      showToast(displayMessage, messageType);
+    }
+  });
 </script>
 {% endblock %}

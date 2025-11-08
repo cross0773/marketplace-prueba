@@ -1,0 +1,237 @@
+/*
+  Estilos Globales para Marketplace Artesanal
+  Tema: Minimalista moderno, natural, interactivo y responsivo.
+*/
+
+/* 1. Variables Globales (Root)
+   Define una paleta de colores y tipografías para mantener la consistencia.
+   Los colores están inspirados en materiales naturales: terracota, arena, piedra y hojas.
+*/
+:root {
+    /* Paleta de colores */
+    --color-acento: #E07A5F;
+    /* Terracota/Salmón para botones y enlaces */
+    --color-texto: #3D405B;
+    /* Azul pizarra oscuro para texto principal */
+    --color-fondo: #FDFCFB;
+    /* Un blanco roto muy sutil */
+    --color-secundario: #81B29A;
+    /* Verde piedra para acentos secundarios */
+    --color-borde: #F4F1DE;
+    /* Arena/Beige para bordes y separadores */
+
+    /* Tipografía */
+    --font-titulos: 'Playfair Display', serif;
+    --font-cuerpo: 'Lato', sans-serif;
+
+    /* Otros */
+    --sombra-suave: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --radio-borde: 0.5rem;
+    /* Bordes redondeados suaves */
+    --transicion-rapida: all 0.2s ease-in-out;
+}
+
+/* 2. Estilos Base y Tipografía
+   Establece una base sólida y legible para toda la aplicación.
+*/
+body {
+    font-family: var(--font-cuerpo);
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    /* Previene el desbordamiento horizontal a nivel de página */
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-titulos);
+    font-weight: 700;
+}
+
+a {
+    color: var(--color-acento);
+    transition: var(--transicion-rapida);
+}
+
+a:hover {
+    color: var(--color-texto);
+    text-decoration: none;
+}
+
+/* 3. Componentes Personalizados (Overrides de Bootstrap)
+   Ajustamos componentes comunes para que coincidan con nuestra identidad visual.
+*/
+
+/* Barra de navegación */
+.navbar {
+    background-color: var(--color-fondo) !important;
+    border-bottom: 1px solid var(--color-borde);
+}
+
+/* Botones */
+.btn-primary {
+    background-color: var(--color-acento);
+    border-color: var(--color-acento);
+    transition: var(--transicion-rapida);
+}
+
+.btn-primary:hover {
+    background-color: #d46a50;
+    /* Un tono más oscuro del acento */
+    border-color: #d46a50;
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-suave);
+}
+
+/* Botón secundario */
+.btn-secondary {
+    background-color: var(--color-secundario);
+    border-color: var(--color-secundario);
+    color: white;
+    transition: var(--transicion-rapida);
+}
+
+.btn-secondary:hover {
+    background-color: #6a9a82;
+    /* Tono más oscuro del secundario */
+    border-color: #6a9a82;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-suave);
+}
+
+/* Tarjetas (para productos, etc.) */
+.card {
+    border: 1px solid var(--color-borde);
+    border-radius: var(--radio-borde);
+    box-shadow: none;
+    transition: var(--transicion-rapida);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--sombra-suave);
+}
+
+/* Formularios */
+.form-control:focus {
+    border-color: var(--color-secundario);
+    box-shadow: 0 0 0 0.25rem rgba(129, 178, 154, 0.25);
+}
+
+/* Pre (para mostrar respuestas de API) */
+pre {
+    background-color: var(--color-borde) !important;
+    border: 1px solid #e5e0c5;
+}
+
+/* 4. Estilos específicos para la página de autenticación */
+.auth-page {
+    background-image: url('https://images.unsplash.com/photo-1555212697-83a8f999c2a3?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-page .card {
+    background-color: rgba(253, 252, 251, 0.9);
+    /* Fondo de tarjeta semi-transparente */
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 5. Sistema de Notificaciones (Toast) */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1055;
+}
+
+.toast.show {
+    animation: slideInRight 0.5s forwards;
+}
+
+.toast.hide {
+    animation: slideOutRight 0.5s forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* 6. Animaciones de Scroll */
+.fade-in-section {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.fade-in-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 7. Estilos para el Carrusel (Hero Section) */
+.carousel-item {
+    height: 400px;
+    /* Altura reducida para un aspecto más compacto */
+    background-color: var(--color-borde);
+    /* Color de fondo mientras carga la imagen */
+}
+
+.carousel-item img {
+    object-fit: cover;
+    /* Asegura que la imagen cubra todo el espacio sin distorsionarse */
+    height: 100%;
+    width: 100%;
+    opacity: 0.9;
+    /* Ligera opacidad para un efecto más suave */
+}
+
+.carousel-caption {
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: var(--radio-borde);
+}
