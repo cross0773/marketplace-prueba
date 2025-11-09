@@ -1,47 +1,99 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="h4 mb-3">Pagos</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h4 mb-0">Gestión de Pagos</h2>
+  <button type="button" class="btn btn-primary" id="btn-open-add-modal">
+    <i class="bi bi-plus-circle me-1"></i> Registrar Nuevo Pago
+  </button>
+</div>
 
-<div class="card mb-4">
-  <div class="card-body">
-    <form id="form-pago" class="row g-3">
-      <div class="col-md-5">
-        <label class="form-label">ID Usuario</label>
-        <input class="form-control" name="id_usuario" required>
+<!-- Modal para Agregar/Editar Pago -->
+<div class="modal fade" id="pagoModal" tabindex="-1" aria-labelledby="pagoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="form-pago">
+        <div class="modal-header">
+          <h5 class="modal-title" id="pagoModalLabel">Registrar Nuevo Pago</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">ID Pedido</label>
+              <input class="form-control" name="id_pedido" type="number" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ID Usuario</label>
+              <input class="form-control" name="id_usuario" type="number" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Monto</label>
+              <input class="form-control" name="monto" type="number" step="0.01" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Estado</label>
+              <select class="form-select" name="estado" required>
+                <option value="completed">Completado</option>
+                <option value="pending">Pendiente</option>
+                <option value="failed">Fallido</option>
+              </select>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label">Método de Pago</label>
+              <select class="form-select" name="metodo_pago">
+                <option value="credit_card">Tarjeta de Crédito</option>
+                <option value="paypal">PayPal</option>
+                <option value="pse">PSE</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" id="btn-submit" class="btn btn-primary">Registrar Pago</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="col-md-5">
-        <label class="form-label">ID Pedido</label>
-        <input class="form-control" name="id_pedido" required>
+      <div class="modal-body">
+        ¿Estás seguro de que quieres eliminar este registro de pago? Esta acción no se puede deshacer.
       </div>
-      <div class="col-md-5">
-        <label class="form-label">Monto</label>
-        <input class="form-control" name="monto" type="number" step="0.01" required>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger">Eliminar</button>
       </div>
-      <div class="col-md-5">
-        <label class="form-label">Método de Pago</label>
-        <input class="form-control" name="metodo_pago" value="credit_card" required>
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-success w-100">Pagar</button>
-      </div>
-    </form>
+    </div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center">
     <span>Historial de Pagos</span>
-    <button id="btn-refresh" class="btn btn-outline-primary btn-sm">Actualizar</button>
+    <button id="btn-refresh" class="btn btn-outline-secondary btn-sm">Actualizar</button>
   </div>
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-sm align-middle">
+      <table class="table table-sm align-middle table-hover">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>ID Pago</th>
             <th>ID Pedido</th>
+            <th>ID Usuario</th>
             <th class="text-end">Monto</th>
             <th>Estado</th>
+            <th class="text-end">Acciones</th>
+            <th>Método de Pago</th>
           </tr>
         </thead>
         <tbody id="tbody-pagos"></tbody>
@@ -53,56 +105,155 @@
 
 {% block scripts %}
 <script>
-async function fetchPagos() {
-  try {
-    const res = await fetch(`${GATEWAY_URL}/api/v1/pagos/`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    const data = await res.json();
-    const tbody = document.getElementById('tbody-pagos');
-    tbody.innerHTML = '';
-    (Array.isArray(data) ? data : data.items || []).forEach(p => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${p.id ?? ''}</td>
-          <td>${p.id_pedido ?? ''}</td>
-          <td class="text-end">${p.monto?.toFixed ? p.monto.toFixed(2) : p.monto}</td>
-          <td>${p.estado ?? ''}</td>
-        </tr>`;
-    });
-  } catch (error) {
-    console.error("Error al cargar pagos:", error);
-    alert("No se pudieron cargar los pagos. ¿Has iniciado sesión?");
-  }
-}
+  const form = document.getElementById('form-pago');
+  const pagoModalEl = document.getElementById('pagoModal');
+  const pagoModal = new bootstrap.Modal(pagoModalEl);
+  const pagoModalLabel = document.getElementById('pagoModalLabel');
+  const submitButton = document.getElementById('btn-submit');
 
-document.getElementById('form-pago').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const payload = {
-    id_usuario: parseInt(fd.get('id_usuario')),
-    id_pedido: parseInt(fd.get('id_pedido')),
-    monto: parseFloat(fd.get('monto')),
-    metodo_pago: fd.get('metodo_pago')
-  };
-  try {
-    const res = await fetch(`${GATEWAY_URL}/api/v1/pagos/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(`Error al procesar pago: ${errorData.detail || res.statusText}`);
+  async function fetchPagos() {
+    try {
+      const res = await fetch(`${GATEWAY_URL}/api/v1/pagos/`, { headers: getAuthHeaders() });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || `Error ${res.status}`);
+      }
+      const data = await res.json();
+      const tbody = document.getElementById('tbody-pagos');
+      tbody.innerHTML = '';
+
+      const pagos = Array.isArray(data) ? data : (data.items || []);
+      if (pagos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No hay pagos registrados.</td></tr>`;
+        return;
+      }
+
+      pagos.forEach(p => {
+        const pagoData = JSON.stringify(p).replace(/"/g, '&quot;');
+        let statusClass = 'bg-secondary';
+        if (p.estado === 'completed') statusClass = 'bg-success';
+        if (p.estado === 'failed') statusClass = 'bg-danger';
+
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr id="pago-row-${p.id}">
+            <td>${p.id ?? ''}</td>
+            <td>${p.id_pedido ?? ''}</td>
+            <td>${p.id_usuario ?? ''}</td>
+            <td class="text-end">${p.monto?.toFixed ? p.monto.toFixed(2) : p.monto}</td>
+            <td><span class="badge ${statusClass}">${p.estado ?? ''}</span></td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick='editPago(${pagoData})'>Editar</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deletePago('${p.id}')">Eliminar</button>
+            </td>
+            <td>${p.metodo_pago ?? 'N/A'}</td>
+          </tr>`);
+      });
+    } catch (error) {
+      showToast(error.message, 'danger');
     }
-    e.target.reset();
-    fetchPagos();
-  } catch (error) {
-    console.error("Error al procesar pago:", error);
-    alert(error.message);
   }
-});
 
-document.getElementById('btn-refresh').addEventListener('click', fetchPagos);
-fetchPagos();
+  function editPago(pago) {
+    form.id.value = pago.id;
+    form.id_pedido.value = pago.id_pedido;
+    form.id_usuario.value = pago.id_usuario;
+    form.monto.value = pago.monto;
+    form.estado.value = pago.estado;
+    form.metodo_pago.value = pago.metodo_pago;
+
+    pagoModalLabel.textContent = `Editando Pago #${pago.id}`;
+    submitButton.textContent = 'Actualizar Pago';
+    submitButton.classList.remove('btn-primary');
+    submitButton.classList.add('btn-success');
+    pagoModal.show();
+  }
+
+  function resetForm() {
+    form.reset();
+    form.id.value = '';
+    pagoModalLabel.textContent = 'Registrar Nuevo Pago';
+    submitButton.textContent = 'Registrar Pago';
+    submitButton.classList.remove('btn-success');
+    submitButton.classList.add('btn-primary');
+  }
+
+  const deleteConfirmModalEl = document.getElementById('deleteConfirmModal');
+  const deleteConfirmModal = new bootstrap.Modal(deleteConfirmModalEl);
+  const confirmDeleteBtn = document.getElementById('btn-confirm-delete');
+
+  async function deletePago(id) {
+    confirmDeleteBtn.onclick = async () => {
+      const row = document.getElementById(`pago-row-${id}`);
+      try {
+        const response = await fetch(`${GATEWAY_URL}/api/v1/pagos/${id}`, {
+          method: 'DELETE', headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Error al eliminar el pago');
+        }
+        showToast('Pago eliminado con éxito.', 'success');
+        if (row) {
+          row.style.transition = 'opacity 0.5s ease';
+          row.style.opacity = '0';
+          setTimeout(() => row.remove(), 500);
+        } else {
+          fetchPagos();
+        }
+      } catch (error) {
+        showToast(error.message, 'danger');
+      } finally {
+        deleteConfirmModal.hide();
+      }
+    };
+    deleteConfirmModal.show();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const id = fd.get('id');
+    const payload = {
+      id_pedido: parseInt(fd.get('id_pedido')),
+      id_usuario: parseInt(fd.get('id_usuario')),
+      monto: Math.round(parseFloat(fd.get('monto')) * 100), // Convertir a centavos (entero)
+      estado: fd.get('estado'),
+      metodo_pago: fd.get('metodo_pago')
+    };
+
+    const isUpdating = id !== '';
+    const url = isUpdating ? `${GATEWAY_URL}/api/v1/pagos/${id}` : `${GATEWAY_URL}/api/v1/pagos/`; // La ruta para POST no necesita el slash al final
+    const method = isUpdating ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method: method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        const actionText = isUpdating ? 'actualizar' : 'registrar';
+        throw new Error(`Error al ${actionText} el pago: ${errorData.detail || res.statusText}`);
+      }
+      const successMessage = isUpdating ? 'Pago actualizado con éxito.' : 'Pago registrado con éxito.';
+      showToast(successMessage, 'success');
+      pagoModal.hide();
+      fetchPagos();
+    } catch (error) {
+      showToast(error.message, 'danger');
+    }
+  });
+
+  pagoModalEl.addEventListener('hidden.bs.modal', resetForm);
+
+  document.getElementById('btn-open-add-modal').addEventListener('click', () => {
+    pagoModal.show();
+  });
+
+  window.editPago = editPago;
+  window.deletePago = deletePago;
+  document.getElementById('btn-refresh').addEventListener('click', fetchPagos);
+  fetchPagos();
 </script>
 {% endblock %}

@@ -15,6 +15,7 @@ class Payment(Base):
     Plantilla de modelo de datos para un recurso.
     Ajusta esta clase según los requisitos de tu tema.
     """
+
     __tablename__ = "payments"
 
     # Columnas de la tabla
@@ -27,30 +28,36 @@ class Payment(Base):
     metodo_pago = Column(String)  # Ej. credit_card, paypal
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
-    #agrego columna adicional de pagos
+    # agrego columna adicional de pagos
     activo = Column(Boolean, default=True)
-    fecha_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    fecha_actualizacion = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     def __repr__(self):
         return f"<Payment(id={self.id}, amount={self.monto})>"
+
 
 class PaymentBase(BaseModel):
     id_usuario: int
     id_pedido: int
     monto: int
-    moneda: str = "COP" 
-    metodo_pago: str
+    moneda: str = "COP"
+    estado: str = "pending"
+    metodo_pago: Optional[str] = None
     activo: bool = True
     fecha_actualizacion: Optional[datetime] = None
+
 
 class PaymentCreate(PaymentBase):
     pass
 
+
 class PaymentRead(PaymentBase):
     id: int
-    estado: str
     fecha_creacion: datetime
     fecha_actualizacion: Optional[datetime] = None
+
 
 class PaymentUpdate(PaymentBase):
     id_usuario: Optional[int] = None
@@ -60,6 +67,6 @@ class PaymentUpdate(PaymentBase):
     estado: Optional[str] = None
     metodo_pago: Optional[str] = None
     activo: Optional[bool] = None
-    
+
     class Config:
-        from_attributes = True # Compatibilidad con Pydantic V2
+        from_attributes = True  # Compatibilidad con Pydantic V2
