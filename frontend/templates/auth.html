@@ -1,47 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="auth-page">
-  <div class="container">
-    <div class="row justify-content-center g-4">
-      <div class="col-lg-5">
-        <div class="card">
-          <div class="card-header text-center h4">Registro</div>
-          <div class="card-body">
-            <form id="form-register" class="row g-3">
-              <div class="col-12">
-                <label class="form-label">Email</label>
-                <input class="form-control" name="email" type="email" required>
-              </div>
-              <div class="col-12">
-                <label class="form-label">Password</label>
-                <input class="form-control" name="password" type="password" required>
-              </div>
-              <div class="col-12">
-                <button class="btn btn-success w-100">Registrarse</button>
-              </div>
-            </form>
-            <pre id="register-resp" class="small bg-body-tertiary p-3 rounded mt-3 d-none"></pre>
+<div class="flip-card">
+  <div class="flip-card-inner">
+    <!-- Lado Frontal: Login -->
+    <div class="flip-card-front">
+      <div class="card h-100">
+        <div class="card-header text-center h4">Iniciar Sesión</div>
+        <div class="card-body d-flex flex-column justify-content-center">
+          <form id="form-login" class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Email</label>
+              <input class="form-control" name="email" type="email" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Password</label>
+              <input class="form-control" name="password" type="password" required>
+            </div>
+            <div class="col-12 mt-4">
+              <button class="btn btn-primary w-100">Iniciar sesión</button>
+            </div>
+          </form>
+          <div class="text-center mt-3">
+            <a href="#" id="show-register">¿No tienes una cuenta? Regístrate</a>
           </div>
         </div>
       </div>
-      <div class="col-lg-5">
-        <div class="card">
-          <div class="card-header text-center h4">Login</div>
-          <div class="card-body">
-            <form id="form-login" class="row g-3">
-              <div class="col-12">
-                <label class="form-label">Email</label>
-                <input class="form-control" name="email" type="email" required>
-              </div>
-              <div class="col-12">
-                <label class="form-label">Password</label>
-                <input class="form-control" name="password" type="password" required>
-              </div>
-              <div class="col-12">
-                <button class="btn btn-primary w-100">Iniciar sesión</button>
-              </div>
-            </form>
-            <pre id="login-resp" class="small bg-body-tertiary p-3 rounded mt-3 d-none"></pre>
+    </div>
+    <!-- Lado Trasero: Registro -->
+    <div class="flip-card-back">
+      <div class="card h-100">
+        <div class="card-header text-center h4">Registro</div>
+        <div class="card-body d-flex flex-column justify-content-center">
+          <form id="form-register" class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Email</label>
+              <input class="form-control" name="email" type="email" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Password</label>
+              <input class="form-control" name="password" type="password" required>
+            </div>
+            <div class="col-12 mt-4">
+              <button class="btn btn-success w-100">Registrarse</button>
+            </div>
+          </form>
+          <div class="text-center mt-3">
+            <a href="#" id="show-login">¿Ya tienes una cuenta? Inicia sesión</a>
           </div>
         </div>
       </div>
@@ -59,14 +63,10 @@
    * Maneja el envío de formularios de autenticación (registro y login).
    * @param {Event} event - El evento de envío del formulario.
    * @param {string} endpoint - La ruta del API a la que se enviará la petición.
-   * @param {string} responseElementId - El ID del elemento donde se mostrará la respuesta.
    */
-  async function handleAuthFormSubmit(event, endpoint, responseElementId) {
+  async function handleAuthFormSubmit(event, endpoint) {
     event.preventDefault();
     const form = event.target;
-    const responseElement = document.getElementById(responseElementId);
-    responseElement.classList.remove('d-none');
-    responseElement.textContent = 'Procesando...';
 
     // Para el login, usamos form-data con username y password
     // Para el registro, usamos JSON con email, username y password
@@ -93,8 +93,6 @@
       requestData = JSON.stringify(requestData);
     }
 
-    console.log('Datos a enviar:', requestData);
-
     try {
       const response = await fetch(`${GATEWAY_URL}/api/v1/auth${endpoint}`, {
         method: 'POST',
@@ -114,23 +112,24 @@
       // Si es un login exitoso, guardamos el token y redirigimos
       if (endpoint.includes('login')) {
         localStorage.setItem('accessToken', responseData.access_token);
-        responseElement.textContent = 'Login exitoso. Redirigiendo...';
+        showToast('Login exitoso. Redirigiendo...', 'success');
         window.location.href = '/productos'; // Redirigir a la página de productos
       } else {
         // Si es un registro exitoso, mostramos el mensaje y limpiamos el formulario
-        responseElement.textContent = `Registro exitoso: ${JSON.stringify(responseData, null, 2)}`;
+        showToast('¡Registro exitoso! Ahora puedes iniciar sesión.', 'success');
         form.reset();
+        // Girar la tarjeta para mostrar el formulario de login
+        document.querySelector('.flip-card').classList.remove('is-flipped');
       }
 
     } catch (error) {
       const errorMessage = `Ha ocurrido un error: ${error.message}`;
-      responseElement.textContent = errorMessage;
       showToast(errorMessage, 'danger');
     }
   }
 
-  document.getElementById('form-register').addEventListener('submit', (e) => handleAuthFormSubmit(e, '/register', 'register-resp'));
-  document.getElementById('form-login').addEventListener('submit', (e) => handleAuthFormSubmit(e, '/login', 'login-resp'));
+  document.getElementById('form-register').addEventListener('submit', (e) => handleAuthFormSubmit(e, '/register'));
+  document.getElementById('form-login').addEventListener('submit', (e) => handleAuthFormSubmit(e, '/login'));
 
   // Mostrar notificación si hay un mensaje en la URL
   document.addEventListener('DOMContentLoaded', () => {
@@ -145,6 +144,18 @@
         : message;
       showToast(displayMessage, messageType);
     }
+
+    // Lógica para girar la tarjeta
+    const flipCard = document.querySelector('.flip-card');
+    document.getElementById('show-register').addEventListener('click', (e) => {
+      e.preventDefault();
+      flipCard.classList.add('is-flipped');
+    });
+
+    document.getElementById('show-login').addEventListener('click', (e) => {
+      e.preventDefault();
+      flipCard.classList.remove('is-flipped');
+    });
   });
 </script>
 {% endblock %}

@@ -25,16 +25,6 @@ def get_db():
 
 app = FastAPI()
 
-# Configura CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # En producción, especifica los orígenes permitidos
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
-
 router = APIRouter(prefix="/api/v1/productos", tags=["productos"])
 
 

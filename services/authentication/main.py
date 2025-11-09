@@ -57,7 +57,11 @@ async def register_user(user: UserRegister):
     del user_dict["password"]  # No guardamos la contraseña en texto plano
 
     users_db.append(user_dict)
-    return {"message": "Usuario registrado exitosamente", "user": user_dict}
+    # No devolver el hash de la contraseña al cliente por seguridad.
+    return {
+        "message": "Usuario registrado exitosamente",
+        "user": {"email": user.email, "username": user.username},
+    }
 
 
 # Endpoint para el login

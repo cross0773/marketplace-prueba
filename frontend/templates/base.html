@@ -42,11 +42,8 @@
     </div>
   </nav>
 
-  <main class="py-4" {% if request.path=='/auth' %}style="padding: 0 !important;" {% endif %}>
-    <div class="container">
-      {% block content %}{% endblock %}
-    </div>
-  </main>
+  <main class="{% if request.path == '/auth' %}auth-main-container{% else %}container py-5 px-md-4{% endif %}">{% block
+    content %}{% endblock %}</main>
 
   <footer class="border-top py-3">
     <div class="container text-center text-secondary small">
@@ -60,6 +57,17 @@
     const GATEWAY_URL = "{{ gateway_url }}";
   </script>
   <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+  <script>
+    // Script para el efecto de la barra de navegación
+    document.addEventListener('DOMContentLoaded', () => {
+      const navbar = document.querySelector('.navbar');
+      if (navbar) {
+        window.addEventListener('scroll', () => {
+          navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+      }
+    });
+  </script>
   {% block scripts %}{% endblock %}
   {% block body_end %}{% endblock %}
 </body>
