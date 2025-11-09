@@ -34,7 +34,7 @@ def health_check():
 
 # Endpoints de pedidos
 @router.get("/", response_model=List[OrderRead])
-async def get_orders(db: Session = Depends(get_db)):
+def get_orders(db: Session = Depends(get_db)):
     return db.query(Order).all()
 
 
@@ -48,7 +48,7 @@ async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{id}", response_model=OrderRead)
-async def update_order(id: int, order: OrderUpdate, db: Session = Depends(get_db)):
+def update_order(id: int, order: OrderUpdate, db: Session = Depends(get_db)):
     db_order = db.query(Order).filter(Order.id == id).first()
     if not db_order:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
@@ -60,7 +60,7 @@ async def update_order(id: int, order: OrderUpdate, db: Session = Depends(get_db
 
 
 @router.delete("/{id}")
-async def delete_order(id: int, db: Session = Depends(get_db)):
+def delete_order(id: int, db: Session = Depends(get_db)):
     db_order = db.query(Order).filter(Order.id == id).first()
     if not db_order:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")

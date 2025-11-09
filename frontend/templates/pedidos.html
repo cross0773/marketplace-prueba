@@ -1,51 +1,114 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="h4 mb-3">Pedidos</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h4 mb-0">Gestión de Pedidos de Artesanías</h2>
+  <button type="button" class="btn btn-primary" id="btn-open-add-modal">
+    <i class="bi bi-plus-circle me-1"></i> Crear Nuevo Pedido
+  </button>
+</div>
 
-<div class="card mb-4">
-  <div class="card-body">
-    <form id="form-pedido" class="row g-3">
-      <div class="col-md-6">
-        <label class="form-label">ID Usuario</label>
-        <input class="form-control" name="id_usuario" required>
+<!-- Modal para Agregar/Editar Pedido -->
+<div class="modal fade" id="pedidoModal" tabindex="-1" aria-labelledby="pedidoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="form-pedido">
+        <div class="modal-header">
+          <h5 class="modal-title" id="pedidoModalLabel">Crear Nuevo Pedido</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">ID Usuario</label>
+              <input class="form-control" name="id_usuario" type="number" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">ID Producto</label>
+              <input class="form-control" name="id_producto" type="number" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Cantidad</label>
+              <input class="form-control" name="cantidad" type="number" value="1" min="1" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Monto Total</label>
+              <input class="form-control" name="monto_total" type="number" step="0.01" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Estado</label>
+              <input class="form-control" name="estado" value="pending" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" id="btn-submit" class="btn btn-primary">Crear Pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Editar Estado del Pedido -->
+<div class="modal fade" id="editStatusModal" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="form-edit-status">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editStatusModalLabel">Editar Estado del Pedido</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id">
+          <div class="mb-3">
+            <label for="edit-estado" class="form-label">Nuevo Estado</label>
+            <input class="form-control" id="edit-estado" name="estado" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Actualizar Estado</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">ID Producto</label>
-        <input class="form-control" name="id_producto" required>
+      <div class="modal-body">
+        ¿Estás seguro de que quieres eliminar este pedido? Esta acción no se puede deshacer.
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Cantidad</label>
-        <input class="form-control" name="cantidad" type="number" value="1" min="1" required>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger">Eliminar</button>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Monto Total</label>
-        <input class="form-control" name="monto_total" type="number" value="100" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Estado</label>
-        <input class="form-control" name="estado" value="pending" required>
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-success w-100">Crear</button>
-      </div>
-    </form>
+    </div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center">
     <span>Listado</span>
-    <button id="btn-refresh" class="btn btn-outline-primary btn-sm">Actualizar</button>
+    <button id="btn-refresh" class="btn btn-outline-secondary btn-sm">Actualizar</button>
   </div>
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-sm align-middle">
+      <table class="table table-sm align-middle table-hover">
         <thead>
           <tr>
             <th>ID</th>
+            <th>ID Usuario</th>
             <th>ID Producto</th>
-            <th>Cantidad</th>
+            <th class="text-center">Cantidad</th>
             <th>Estado</th>
+            <th class="text-end">Acciones</th>
           </tr>
         </thead>
         <tbody id="tbody-pedidos"></tbody>
@@ -57,57 +120,164 @@
 
 {% block scripts %}
 <script>
-async function fetchPedidos() {
-  try {
-    const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    const data = await res.json();
-    const tbody = document.getElementById('tbody-pedidos');
-    tbody.innerHTML = '';
-    (Array.isArray(data) ? data : data.items || []).forEach(p => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${p.id ?? ''}</td>
-          <td>${p.id_producto ?? ''}</td>
-          <td>${p.cantidad ?? ''}</td>
-          <td>${p.estado ?? ''}</td>
-        </tr>`;
-    });
-  } catch (error) {
-    console.error("Error al cargar pedidos:", error);
-    alert("No se pudieron cargar los pedidos. ¿Has iniciado sesión?");
-  }
-}
+  const form = document.getElementById('form-pedido');
+  const pedidoModalEl = document.getElementById('pedidoModal');
+  const pedidoModal = new bootstrap.Modal(pedidoModalEl);
+  const pedidoModalLabel = document.getElementById('pedidoModalLabel');
 
-document.getElementById('form-pedido').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const payload = {
-    id_usuario: parseInt(fd.get('id_usuario')),
-    id_producto: parseInt(fd.get('id_producto')),
-    cantidad: parseInt(fd.get('cantidad')),
-    monto_total: parseInt(fd.get('monto_total')),
-    estado: fd.get('estado')
-  };
-  try {
-    const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(`Error al crear pedido: ${errorData.detail || res.statusText}`);
+  const editStatusModalEl = document.getElementById('editStatusModal');
+  const editStatusModal = new bootstrap.Modal(editStatusModalEl);
+  const editStatusForm = document.getElementById('form-edit-status');
+  const editStatusModalLabel = document.getElementById('editStatusModalLabel');
+
+  async function fetchPedidos() {
+    try {
+      const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/`, { headers: getAuthHeaders() });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || `Error ${res.status}`);
+      }
+      const data = await res.json();
+      const tbody = document.getElementById('tbody-pedidos');
+      tbody.innerHTML = '';
+
+      const pedidos = Array.isArray(data) ? data : (data.items || []);
+      if (pedidos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No hay pedidos disponibles.</td></tr>`;
+        return;
+      }
+
+      pedidos.forEach(p => {
+        const pedidoData = JSON.stringify(p).replace(/"/g, '&quot;');
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr id="pedido-row-${p.id}">
+            <td>${p.id ?? ''}</td>
+            <td>${p.id_usuario ?? ''}</td>
+            <td>${p.id_producto ?? ''}</td>
+            <td class="text-center">${p.cantidad ?? ''}</td>
+            <td>
+              <span class="badge ${p.estado === 'completed' ? 'bg-success' : (p.estado === 'cancelled' ? 'bg-danger' : 'bg-secondary')}">
+                ${p.estado ?? ''}
+              </span>
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick='editPedido(${pedidoData})'>Editar</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deletePedido('${p.id}')">Eliminar</button>
+            </td>
+          </tr>`);
+      });
+    } catch (error) {
+      showToast(error.message, 'danger');
     }
-    e.target.reset();
-    fetchPedidos();
-  } catch (error) {
-    console.error("Error al crear pedido:", error);
-    alert(error.message);
   }
-});
 
-document.getElementById('btn-refresh').addEventListener('click', fetchPedidos);
-fetchPedidos();
+  function editPedido(pedido) {
+    editStatusForm.id.value = pedido.id;
+    editStatusForm.estado.value = pedido.estado;
+    editStatusModalLabel.textContent = `Editando Estado del Pedido #${pedido.id}`;
+    editStatusModal.show();
+  }
+
+  function resetForm() {
+    form.reset();
+    pedidoModalLabel.textContent = 'Crear Nuevo Pedido';
+    document.getElementById('btn-submit').textContent = 'Crear Pedido';
+  }
+
+  const deleteConfirmModalEl = document.getElementById('deleteConfirmModal');
+  const deleteConfirmModal = new bootstrap.Modal(deleteConfirmModalEl);
+  const confirmDeleteBtn = document.getElementById('btn-confirm-delete');
+
+  async function deletePedido(id) {
+    confirmDeleteBtn.onclick = async () => {
+      const row = document.getElementById(`pedido-row-${id}`);
+      try {
+        const response = await fetch(`${GATEWAY_URL}/api/v1/pedidos/${id}`, {
+          method: 'DELETE', headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Error al eliminar el pedido');
+        }
+        showToast('Pedido eliminado con éxito.', 'success');
+        if (row) {
+          row.style.transition = 'opacity 0.5s ease';
+          row.style.opacity = '0';
+          setTimeout(() => row.remove(), 500);
+        } else {
+          fetchPedidos();
+        }
+      } catch (error) {
+        showToast(error.message, 'danger');
+      } finally {
+        deleteConfirmModal.hide();
+      }
+    };
+    deleteConfirmModal.show();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = {
+      id_usuario: parseInt(fd.get('id_usuario')),
+      id_producto: parseInt(fd.get('id_producto')),
+      cantidad: parseInt(fd.get('cantidad')),
+      monto_total: parseFloat(fd.get('monto_total')),
+      estado: fd.get('estado')
+    };
+
+    try {
+      const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`Error al crear pedido: ${errorData.detail || res.statusText}`);
+      }
+      showToast('Pedido creado con éxito.', 'success');
+      pedidoModal.hide();
+      fetchPedidos();
+    } catch (error) {
+      showToast(error.message, 'danger');
+    }
+  });
+
+  editStatusForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const id = fd.get('id');
+    const payload = { estado: fd.get('estado') };
+
+    try {
+      const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`Error al actualizar pedido: ${errorData.detail || res.statusText}`);
+      }
+      showToast('Pedido actualizado con éxito.', 'success');
+      editStatusModal.hide();
+      fetchPedidos();
+    } catch (error) {
+      showToast(error.message, 'danger');
+    }
+  });
+
+  pedidoModalEl.addEventListener('hidden.bs.modal', resetForm);
+
+  document.getElementById('btn-open-add-modal').addEventListener('click', () => {
+    pedidoModal.show();
+  });
+
+  window.editPedido = editPedido;
+  window.deletePedido = deletePedido;
+  document.getElementById('btn-refresh').addEventListener('click', fetchPedidos);
+  fetchPedidos();
 </script>
 {% endblock %}

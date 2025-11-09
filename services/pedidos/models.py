@@ -14,6 +14,7 @@ class Order(Base):
     Plantilla de modelo de datos para un recurso.
     Ajusta esta clase según los requisitos de tu tema.
     """
+
     __tablename__ = "orders"
 
     # Columnas de la tabla
@@ -30,7 +31,6 @@ class Order(Base):
         return f"<Order(id_usuario={self.id_usuario}, id_producto={self.id_producto})>"
 
 
-
 class OrderBase(BaseModel):
     id_usuario: int
     id_producto: int
@@ -39,13 +39,19 @@ class OrderBase(BaseModel):
     estado: str
     activo: bool = True
 
+
 class OrderCreate(OrderBase):
     pass
+
 
 class OrderRead(OrderBase):
     id: int
     fecha_creacion: datetime
     activo: bool
+
+    class Config:
+        from_attributes = True
+
 
 class OrderUpdate(OrderBase):
     id_usuario: Optional[int] = None
@@ -54,6 +60,6 @@ class OrderUpdate(OrderBase):
     monto_total: Optional[int] = None
     estado: Optional[str] = None
     activo: Optional[bool] = None
-    
+
     class Config:
         from_attributes = True
