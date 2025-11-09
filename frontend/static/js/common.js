@@ -70,3 +70,16 @@ function showToast(message, type = 'info') {
 window.getAuthHeaders = getAuthHeaders;
 window.fetchProductos = fetchProductos;
 window.showToast = showToast;
+
+/**
+ * Formatea un número como moneda colombiana (COP), usando '.' como separador de miles.
+ * @param {number} value - El número a formatear.
+ * @returns {string} - El valor formateado como moneda.
+ */
+function formatCurrency(value) {
+  if (typeof value !== 'number') {
+    return 'N/A';
+  }
+  // Usamos el locale 'es-CO' para el formato colombiano y quitamos los decimales.
+  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+}

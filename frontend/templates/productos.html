@@ -146,7 +146,7 @@
           <td class="text-center">
             <img src="${p.image || 'https://placehold.co/60x60/F4F1DE/3D405B?text=N/A'}" alt="${p.nombre}" width="60" height="60" class="rounded" style="object-fit: cover;">
           </td>
-          <td class="text-end">${p.precio?.toFixed ? p.precio.toFixed(2) : p.precio}</td>
+          <td class="text-end">${typeof p.precio === 'number' ? formatCurrency(p.precio) : 'N/A'}</td>
           <td class="text-end">
             <button class="btn btn-sm btn-outline-secondary me-1" onclick='editProducto(${productData})'>Editar</button>
             <button class="btn btn-sm btn-outline-danger" onclick="deleteProducto('${p.id}')">Eliminar</button>
@@ -160,6 +160,9 @@
   }
 
   function editProducto(producto) {
+    // Asegurarse de que el precio no tenga decimales para el input type="number"
+    const precioParaInput = Math.round(producto.precio);
+
     form.id.value = producto.id;
     form.nombre.value = producto.nombre;
     form.categoria.value = producto.categoria;

@@ -120,7 +120,7 @@
             <td>${p.id ?? ''}</td>
             <td>${p.id_usuario ?? ''}</td>
             <td class="text-center">${p.items?.length ?? 0}</td>
-            <td class="text-end">${p.monto_total ? '$' + p.monto_total.toFixed(2) : 'N/A'}</td>
+            <td class="text-end">${typeof p.monto_total === 'number' ? formatCurrency(p.monto_total) : 'N/A'}</td>
             <td>
               <span class="badge ${p.estado === 'completed' ? 'bg-success' : (p.estado === 'cancelled' ? 'bg-danger' : 'bg-secondary')}">
                 ${p.estado ?? ''}
@@ -141,7 +141,7 @@
   function viewPedido(pedido) {
     // Por ahora, 'Ver' simplemente abre el modal de creación.
     // En una implementación completa, mostraría los detalles del pedido.
-    alert(`Detalles del Pedido #${pedido.id}:\n\n` +
+    alert(`Detalles del Pedido #${pedido.id}:\n\n` + // Esta alerta es temporal
       `Usuario: ${pedido.id_usuario}\n` +
       `Monto Total: $${pedido.monto_total.toFixed(2)}\n` +
       `Estado: ${pedido.estado}\n` +

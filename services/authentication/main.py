@@ -1,5 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi.middleware.cors import (
+    CORSMiddleware,
+)  # No es necesario si el gateway maneja CORS
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
@@ -11,15 +13,6 @@ import bcrypt
 
 # Inicializar la aplicación FastAPI
 app = FastAPI()
-
-# Configuración de CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # En producción, especifica los orígenes permitidos
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 # Modelo para el registro de usuarios
@@ -34,10 +27,11 @@ users_db: List[Dict[str, Any]] = []
 
 # Configuración de seguridad
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
-# Resto del código de funciones auxiliares...
-# ... (el resto de tu código de funciones auxiliares permanece igual)
+
+# Creamos un router para seguir el patrón de los otros servicios
+router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
 # Endpoint de salud
@@ -46,8 +40,10 @@ def health_check():
     return {"status": "ok"}
 
 
-# Endpoints de autenticación
-@app.post("/register")
+# --- Endpoints de autenticación en el router ---
+
+
+@router.post("/register")
 async def register_user(user: UserRegister):
     # Verificar si el usuario ya existe
     for existing_user in users_db:
@@ -65,7 +61,7 @@ async def register_user(user: UserRegister):
 
 
 # Endpoint para el login
-@app.post("/login")
+@router.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -81,6 +77,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         data={"sub": user["email"]}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+# Incluimos el router en la app principal
+app.include_router(router)
 
 
 # Función para obtener el hash de la contraseña

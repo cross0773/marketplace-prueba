@@ -104,7 +104,7 @@
             <td>${p.id ?? ''}</td>
             <td>${p.id_pedido ?? ''}</td>
             <td>${p.id_usuario ?? ''}</td>
-            <td class="text-end">${p.monto ? '$' + p.monto.toFixed(2) : 'N/A'}</td>
+            <td class="text-end">${typeof p.monto === 'number' ? formatCurrency(p.monto) : 'N/A'}</td>
             <td><span class="badge ${statusClass}">${p.estado ?? ''}</span></td>
             <td>${p.metodo_pago ?? 'N/A'}</td>
             <td>${p.fecha_pago ? new Date(p.fecha_pago).toLocaleString() : 'Pendiente'}</td>
@@ -123,8 +123,8 @@
 
   function abrirModalPago(pago) {
     pagoForm.id.value = pago.id;
-    pagoForm.monto_pedido.value = `$${pago.monto.toFixed(2)}`;
-    pagoForm.monto_pagar.value = pago.monto.toFixed(2); // Sugerir el monto exacto
+    pagoForm.monto_pedido.value = formatCurrency(pago.monto);
+    pagoForm.monto_pagar.value = pago.monto; // Sugerir el monto exacto sin formato
     pagoModal.show();
   }
 

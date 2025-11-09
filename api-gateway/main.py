@@ -102,36 +102,26 @@ async def forward_request(service_name: str, path: str, request: Request):
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
 
-# --- Rutas explícitas para cada microservicio ---
-# Esto es más robusto y seguro que una ruta genérica.
-@router.api_route(
-    "/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-)
-async def auth_proxy(path: str, request: Request):
-    return await forward_request("auth-service", f"api/v1/auth/{path}", request)
+def create_proxy_route(service_name: str, service_path_prefix: str):
+    """Función para crear dinámicamente las rutas del proxy."""
 
-
-@router.api_route(
-    "/productos/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-)
-async def productos_proxy(path: str, request: Request):
-    return await forward_request(
-        "productos-service", f"api/v1/productos/{path}", request
+    @router.api_route(
+        f"/{service_path_prefix}/{{path:path}}",
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        # El nombre del endpoint debe ser único
+        name=f"{service_name}_proxy",
     )
+    async def proxy(path: str, request: Request):
+        # La ruta completa que se reenvía al microservicio
+        forward_path = f"api/v1/{service_path_prefix}/{path}"
+        return await forward_request(service_name, forward_path, request)
 
 
-@router.api_route(
-    "/pedidos/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-)
-async def pedidos_proxy(path: str, request: Request):
-    return await forward_request("pedidos-service", f"api/v1/pedidos/{path}", request)
-
-
-@router.api_route(
-    "/pagos/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-)
-async def pagos_proxy(path: str, request: Request):
-    return await forward_request("pagos-service", f"api/v1/pagos/{path}", request)
+# --- Creación dinámica de rutas para cada microservicio ---
+create_proxy_route("auth-service", "auth")
+create_proxy_route("productos-service", "productos")
+create_proxy_route("pedidos-service", "pedidos")
+create_proxy_route("pagos-service", "pagos")
 
 
 # Incluye el router en la aplicación principal.
