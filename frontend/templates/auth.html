@@ -1,64 +1,68 @@
 {% extends "base.html" %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth_styles.css') }}">
+{% endblock %}
 {% block content %}
-<div class="flip-card">
-  <div class="flip-card-inner">
-    <!-- Lado Frontal: Login -->
-    <div class="flip-card-front">
-      <div class="card h-100">
-        <div class="card-header text-center h4">Iniciar Sesión</div>
-        <div class="card-body d-flex flex-column justify-content-center">
-          <form id="form-login" class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Email</label>
-              <input class="form-control" name="email" type="email" required>
+<div class="auth-main-container">
+  <div class="flip-card">
+    <div class="flip-card-inner">
+      <!-- Lado Frontal: Login -->
+      <div class="flip-card-front">
+        <div class="card h-100">
+          <div class="card-header text-center h4">Iniciar Sesión</div>
+          <div class="card-body d-flex flex-column justify-content-center">
+            <form id="form-login" class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Email</label>
+                <input class="form-control" name="email" type="email" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Password</label>
+                <input class="form-control" name="password" type="password" required>
+              </div>
+              <div class="col-12 mt-4">
+                <button class="btn btn-primary w-100">Iniciar sesión</button>
+              </div>
+            </form>
+            <div class="text-center mt-3">
+              <a href="#" id="show-register">¿No tienes una cuenta? Regístrate</a>
             </div>
-            <div class="col-12">
-              <label class="form-label">Password</label>
-              <input class="form-control" name="password" type="password" required>
-            </div>
-            <div class="col-12 mt-4">
-              <button class="btn btn-primary w-100">Iniciar sesión</button>
-            </div>
-          </form>
-          <div class="text-center mt-3">
-            <a href="#" id="show-register">¿No tienes una cuenta? Regístrate</a>
           </div>
         </div>
       </div>
-    </div>
-    <!-- Lado Trasero: Registro -->
-    <div class="flip-card-back">
-      <div class="card h-100">
-        <div class="card-header text-center h4">Registro</div>
-        <div class="card-body d-flex flex-column justify-content-center">
-          <form id="form-register" class="row g-3">
-            <div class="col-12">
-              <label class="form-label">Email</label>
-              <input class="form-control" name="email" type="email" required>
+      <!-- Lado Trasero: Registro -->
+      <div class="flip-card-back">
+        <div class="card h-100">
+          <div class="card-header text-center h4">Registro</div>
+          <div class="card-body d-flex flex-column justify-content-center">
+            <form id="form-register" class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Email</label>
+                <input class="form-control" name="email" type="email" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Password</label>
+                <input class="form-control" name="password" type="password" required>
+              </div>
+              <div class="col-12 mt-4">
+                <button class="btn btn-success w-100">Registrarse</button>
+              </div>
+            </form>
+            <div class="text-center mt-3">
+              <a href="#" id="show-login">¿Ya tienes una cuenta? Inicia sesión</a>
             </div>
-            <div class="col-12">
-              <label class="form-label">Password</label>
-              <input class="form-control" name="password" type="password" required>
-            </div>
-            <div class="col-12 mt-4">
-              <button class="btn btn-success w-100">Registrarse</button>
-            </div>
-          </form>
-          <div class="text-center mt-3">
-            <a href="#" id="show-login">¿Ya tienes una cuenta? Inicia sesión</a>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // Ocultar el footer en la página de autenticación
-  document.querySelector('footer').style.display = 'none';
-
   /**
    * Maneja el envío de formularios de autenticación (registro y login).
    * @param {Event} event - El evento de envío del formulario.
@@ -133,6 +137,12 @@
 
   // Mostrar notificación si hay un mensaje en la URL
   document.addEventListener('DOMContentLoaded', () => {
+    // Ocultar elementos de la UI y el scroll solo en esta página
+    document.body.classList.add('no-scroll');
+    const navbar = document.querySelector('.navbar');
+    const footer = document.querySelector('footer');
+    if (navbar) navbar.style.display = 'none';
+    if (footer) footer.style.display = 'none';
     const urlParams = new URLSearchParams(window.location.search);
     const message = urlParams.get('message');
     const messageType = urlParams.get('type') || 'info'; // 'info' por defecto

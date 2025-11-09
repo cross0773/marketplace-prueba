@@ -1,0 +1,85 @@
+/*
+  Estilos Específicos para la Página de Autenticación
+*/
+
+/* Oculta el scroll en la página de autenticación */
+body.no-scroll {
+    overflow: hidden;
+}
+
+/* Contenedor principal que aplica el fondo y centra el contenido */
+.auth-main-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 0 !important;
+    background-image: url('https://images.pexels.com/photos/13638371/pexels-photo-13638371.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed;
+}
+
+/* Tarjeta con efecto de transparencia */
+.auth-main-container .card {
+    background-color: rgba(253, 252, 251, 0.85);
+    /* Fondo de tarjeta semi-transparente */
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.5s ease-in-out;
+    border: none;
+    box-shadow: 0 8px 32px 0 rgba(61, 64, 91, 0.37);
+    /* Sombra más pronunciada para destacar */
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para la animación de la tarjeta giratoria */
+.flip-card {
+    background-color: transparent;
+    width: 100%;
+    max-width: 450px;
+    /* Ancho máximo para la tarjeta */
+    margin: auto;
+    /* Centrado horizontal */
+    height: 480px;
+    /* Altura fija para evitar saltos */
+    perspective: 1000px;
+    /* Efecto 3D */
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.flip-card.is-flipped .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    /* Safari */
+    backface-visibility: hidden;
+}
+
+.flip-card-back {
+    transform: rotateY(180deg);
+}

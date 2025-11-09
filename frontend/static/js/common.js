@@ -23,8 +23,7 @@ async function fetchProductos() {
   try {
     const response = await fetch(`${window.GATEWAY_URL}/api/v1/productos/`, {
       method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include'
+      headers: getAuthHeaders()
     });
 
     if (!response.ok) {

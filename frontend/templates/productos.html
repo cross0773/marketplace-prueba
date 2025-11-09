@@ -137,7 +137,7 @@
       }
 
       productos.forEach(p => {
-        const productData = JSON.stringify(p).replace(/"/g, '&quot;');
+        productCache.set(p.id.toString(), p); // Guardamos el producto en la caché
         tbody.insertAdjacentHTML('beforeend', `
         <tr id="producto-row-${p.id}">
           <td>${p.id ?? ''}</td>
@@ -148,8 +148,8 @@
           </td>
           <td class="text-end">${typeof p.precio === 'number' ? formatCurrency(p.precio) : 'N/A'}</td>
           <td class="text-end">
-            <button class="btn btn-sm btn-outline-secondary me-1" onclick='editProducto(${productData})'>Editar</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteProducto('${p.id}')">Eliminar</button>
+            <button class="btn btn-sm btn-outline-secondary me-1 btn-edit" data-id="${p.id}">Editar</button>
+            <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${p.id}">Eliminar</button>
           </td>
         </tr>`);
       });
@@ -159,9 +159,12 @@
     }
   }
 
-  function editProducto(producto) {
-    // Asegurarse de que el precio no tenga decimales para el input type="number"
-    const precioParaInput = Math.round(producto.precio);
+  function openEditModal(id) {
+    const producto = productCache.get(id.toString());
+    if (!producto) {
+      showToast('Error: No se encontraron los datos del producto.', 'danger');
+      return;
+    }
 
     form.id.value = producto.id;
     form.nombre.value = producto.nombre;
@@ -190,10 +193,10 @@
   const deleteConfirmModal = new bootstrap.Modal(deleteConfirmModalEl);
   const confirmDeleteBtn = document.getElementById('btn-confirm-delete');
 
-  async function deleteProducto(id) {
+  function openDeleteModal(id) {
     // Configura el botón de confirmación para que sepa qué ID eliminar
     confirmDeleteBtn.onclick = async () => {
-      const row = document.getElementById(`producto-row-${id}`);
+      const row = document.getElementById(`producto-row-${id}`); // Mover la lógica de borrado aquí
       try {
         const response = await fetch(`${GATEWAY_URL}/api/v1/productos/${id}`, {
           method: 'DELETE', headers: getAuthHeaders()
@@ -265,9 +268,18 @@
     productModal.show();
   });
 
-  // Alias para las funciones para que sean accesibles desde el HTML (onclick)
-  window.editProducto = editProducto;
-  window.deleteProducto = deleteProducto;
+  // Delegación de eventos para los botones de la tabla
+  document.getElementById('tbody-productos').addEventListener('click', (event) => {
+    const target = event.target;
+    if (target.classList.contains('btn-edit')) {
+      const id = target.getAttribute('data-id');
+      openEditModal(id);
+    } else if (target.classList.contains('btn-delete')) {
+      const id = target.getAttribute('data-id');
+      openDeleteModal(id);
+    }
+  });
+
   document.getElementById('btn-refresh').addEventListener('click', fetchProductos);
   fetchProductos();
 </script>

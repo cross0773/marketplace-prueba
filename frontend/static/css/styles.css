@@ -36,26 +36,12 @@
 */
 body {
     font-family: var(--font-cuerpo);
-    background-image: url('https://plus.unsplash.com/premium_photo-1676320257104-c7c0db4433ce?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Y2FtcG8lMjBkZSUyMG1vbnRhJUMzJUIxYXxlbnwwfHwwfHx8MA%3D%3D&fm=jpg&q=60&w=3000');
-    background-size: cover;
-    background-position: center center;
-    background-attachment: fixed;
-    /* Mantiene el fondo fijo al hacer scroll */
     color: var(--color-texto);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-}
-
-/* Contenedor principal para la página de autenticación */
-.auth-main-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     min-height: 100vh;
-    /* Ocupa toda la altura de la pantalla */
-    padding: 0 !important;
-    /* Elimina cualquier padding residual */
+    /* Ensure full viewport height */
 }
 
 h1,
@@ -130,14 +116,15 @@ a:hover {
 /* Tarjetas (para productos, etc.) */
 .card {
     border: 1px solid var(--color-borde);
+    background-color: var(--color-fondo);
     border-radius: var(--radio-borde);
-    box-shadow: none;
+    box-shadow: var(--sombra-suave);
     transition: var(--transicion-rapida);
 }
 
 .card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
     transform: translateY(-5px);
-    box-shadow: var(--sombra-suave);
 }
 
 /* Formularios */
@@ -150,73 +137,6 @@ a:hover {
 pre {
     background-color: var(--color-borde) !important;
     border: 1px solid #e5e0c5;
-}
-
-/* 4. Estilos específicos para la página de autenticación */
-.auth-page {
-    /* El centrado ahora lo maneja el contenedor padre .auth-main-container */
-}
-
-.auth-page .card {
-    background-color: rgba(253, 252, 251, 0.9);
-    /* Fondo de tarjeta semi-transparente, más opaco para legibilidad */
-    backdrop-filter: blur(10px);
-    animation: fadeIn 0.5s ease-in-out;
-    border: none;
-    box-shadow: var(--sombra-suave);
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Estilos para la animación de la tarjeta giratoria */
-.flip-card {
-    background-color: transparent;
-    width: 100%;
-    max-width: 450px;
-    /* Ancho máximo para la tarjeta */
-    margin: auto;
-    /* Añade un margen automático a la izquierda */
-    height: 480px;
-    /* Altura fija para evitar saltos */
-    perspective: 1000px;
-    /* Efecto 3D */
-}
-
-.flip-card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
-}
-
-.flip-card.is-flipped .flip-card-inner {
-    transform: rotateY(180deg);
-}
-
-.flip-card-front,
-.flip-card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    -webkit-backface-visibility: hidden;
-    /* Safari */
-    backface-visibility: hidden;
-}
-
-.flip-card-back {
-    transform: rotateY(180deg);
 }
 
 /* 5. Sistema de Notificaciones (Toast) */
