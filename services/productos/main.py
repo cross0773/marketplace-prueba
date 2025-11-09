@@ -35,7 +35,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-router = APIRouter(prefix="/productos", tags=["productos"])
+router = APIRouter(prefix="/api/v1/productos", tags=["productos"])
 
 
 @app.get("/health")
@@ -63,6 +63,14 @@ async def create_producto(producto: ProductoCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(new_producto)
     return new_producto
+
+
+@router.get("/{id}", response_model=ProductoResponse)
+async def get_producto(id: int, db: Session = Depends(get_db)):
+    db_producto = db.query(Producto).filter(Producto.id == id).first()
+    if not db_producto:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    return db_producto
 
 
 @router.put("/{id}", response_model=ProductoResponse)

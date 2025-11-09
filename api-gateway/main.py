@@ -2,6 +2,7 @@ from fastapi import FastAPI, APIRouter, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
+import logging
 
 # Define la instancia de la aplicación FastAPI.
 app = FastAPI(title="API Gateway Taller Microservicios")
@@ -19,16 +20,21 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# Configura un logger básico
+logging.basicConfig(level=logging.INFO)
+
 # Crea un enrutador para las peticiones de los microservicios.
 router = APIRouter(prefix="/api/v1")
 
 # Define los microservicios y sus URLs.
 # La URL debe coincidir con el nombre del servicio definido en docker-compose.yml.
 SERVICES = {
-    "auth": os.getenv("AUTH_SERVICE_URL", "http://auth-service:8001"),
-    "productos": os.getenv("PRODUCTOS_SERVICE_URL", "http://productos-service:8004"),
-    "pedidos": os.getenv("PEDIDOS_SERVICE_URL", "http://pedidos-service:8003"),
-    "pagos": os.getenv("PAGOS_SERVICE_URL", "http://pagos-service:8002"),
+    "auth-service": os.getenv("AUTH_SERVICE_URL", "http://auth-service:8001"),
+    "productos-service": os.getenv(
+        "PRODUCTOS_SERVICE_URL", "http://productos-service:8004"
+    ),
+    "pedidos-service": os.getenv("PEDIDOS_SERVICE_URL", "http://pedidos-service:8003"),
+    "pagos-service": os.getenv("PAGOS_SERVICE_URL", "http://pagos-service:8002"),
 }
 
 # Crea un cliente HTTP asíncrono que se reutilizará en todas las peticiones.
@@ -57,9 +63,9 @@ async def forward_request(service_name: str, path: str, request: Request):
         content = await request.body()
 
         # Imprimir información de depuración
-        print(f"Forwarding request to: {service_url}")
-        print(f"Headers: {headers}")
-        print(f"Params: {params}")
+        logging.info(f"Forwarding request to: {service_url}")
+        logging.info(f"Method: {request.method}, Headers: {headers}")
+        logging.info(f"Params: {params}")
 
         # Usa httpx para enviar la petición de forma asíncrona
         response = await client.request(
@@ -80,42 +86,43 @@ async def forward_request(service_name: str, path: str, request: Request):
         return response.text
 
     except httpx.ConnectError as e:
-        print(f"Connection error: {str(e)}")
+        logging.error(f"Connection error to {service_name}: {str(e)}")
         raise HTTPException(
             status_code=503,
             detail=f"No se pudo conectar al servicio {service_name}: {str(e)}",
         )
     except httpx.HTTPStatusError as e:
-        print(f"HTTP error: {str(e)}")
+        logging.error(
+            f"HTTP error from {service_name}: {e.response.status_code} - {e.response.text}"
+        )
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except Exception as e:
-        print(f"Unexpected error: {str(e)}")
+        logging.error(f"Unexpected error while forwarding to {service_name}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
 
-# Rutas genéricas que capturan todas las peticiones
-@router.get("/{path:path}")
-async def get_route(path: str, request: Request):
-    service_name = path.split("/")[0]
-    return await forward_request(service_name, path, request)
+# --- Rutas explícitas para cada microservicio ---
+# Esto es más robusto y seguro que una ruta genérica.
+@router.api_route("/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def auth_proxy(path: str, request: Request):
+    return await forward_request("auth-service", f"api/v1/auth/{path}", request)
 
 
-@router.post("/{path:path}")
-async def post_route(path: str, request: Request):
-    service_name = path.split("/")[0]
-    return await forward_request(service_name, path, request)
+@router.api_route("/productos/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def productos_proxy(path: str, request: Request):
+    return await forward_request(
+        "productos-service", f"api/v1/productos/{path}", request
+    )
 
 
-@router.put("/{path:path}")
-async def put_route(path: str, request: Request):
-    service_name = path.split("/")[0]
-    return await forward_request(service_name, path, request)
+@router.api_route("/pedidos/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def pedidos_proxy(path: str, request: Request):
+    return await forward_request("pedidos-service", f"api/v1/pedidos/{path}", request)
 
 
-@router.delete("/{path:path}")
-async def delete_route(path: str, request: Request):
-    service_name = path.split("/")[0]
-    return await forward_request(service_name, path, request)
+@router.api_route("/pagos/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def pagos_proxy(path: str, request: Request):
+    return await forward_request("pagos-service", f"api/v1/pagos/{path}", request)
 
 
 # Incluye el router en la aplicación principal.
