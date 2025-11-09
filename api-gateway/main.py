@@ -12,7 +12,8 @@ app = FastAPI(title="API Gateway Taller Microservicios")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5000"
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
     ],  # Permite peticiones desde cualquier origen (ajustar en producción)
     allow_credentials=True,
     allow_methods=["*"],
@@ -103,24 +104,32 @@ async def forward_request(service_name: str, path: str, request: Request):
 
 # --- Rutas explícitas para cada microservicio ---
 # Esto es más robusto y seguro que una ruta genérica.
-@router.api_route("/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@router.api_route(
+    "/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 async def auth_proxy(path: str, request: Request):
     return await forward_request("auth-service", f"api/v1/auth/{path}", request)
 
 
-@router.api_route("/productos/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@router.api_route(
+    "/productos/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 async def productos_proxy(path: str, request: Request):
     return await forward_request(
         "productos-service", f"api/v1/productos/{path}", request
     )
 
 
-@router.api_route("/pedidos/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@router.api_route(
+    "/pedidos/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 async def pedidos_proxy(path: str, request: Request):
     return await forward_request("pedidos-service", f"api/v1/pedidos/{path}", request)
 
 
-@router.api_route("/pagos/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@router.api_route(
+    "/pagos/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 async def pagos_proxy(path: str, request: Request):
     return await forward_request("pagos-service", f"api/v1/pagos/{path}", request)
 

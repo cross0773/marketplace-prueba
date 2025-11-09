@@ -26,6 +26,7 @@ class Payment(Base):
     moneda = Column(String, default="COP")
     estado = Column(String, default="pending")  # Ej. pending, completed, failed
     metodo_pago = Column(String)  # Ej. credit_card, paypal
+    fecha_pago = Column(DateTime, nullable=True)  # Fecha en que se completa el pago
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     # agrego columna adicional de pagos
@@ -56,6 +57,7 @@ class PaymentCreate(PaymentBase):
 class PaymentRead(PaymentBase):
     id: int
     fecha_creacion: datetime
+    fecha_pago: Optional[datetime] = None
     fecha_actualizacion: Optional[datetime] = None
 
 

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h4 mb-0">Gestión de Pedidos de Artesanías</h2>
+  <h2 class="h4 mb-0">Gestión de Pedidos</h2>
   <button type="button" class="btn btn-primary" id="btn-open-add-modal">
     <i class="bi bi-plus-circle me-1"></i> Crear Nuevo Pedido
   </button>
@@ -17,53 +17,27 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
+          <input type="hidden" name="id">
           <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-12">
               <label class="form-label">ID Usuario</label>
               <input class="form-control" name="id_usuario" type="number" required>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">ID Producto</label>
-              <input class="form-control" name="id_producto" type="number" required>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Cantidad</label>
-              <input class="form-control" name="cantidad" type="number" value="1" min="1" required>
-            </div>
-            <div class="col-md-8">
-              <label class="form-label">Monto Total</label>
-              <input class="form-control" name="monto_total" type="number" step="0.01" required>
+            <div class="col-12">
+              <hr>
+              <h6>Ítems del Pedido</h6>
+              <div id="items-container">
+                <!-- Los ítems se añadirán aquí dinámicamente -->
+              </div>
+              <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="btn-add-item">
+                <i class="bi bi-plus"></i> Añadir Producto
+              </button>
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button type="submit" id="btn-submit" class="btn btn-primary">Crear Pedido</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal para Editar Estado del Pedido -->
-<div class="modal fade" id="editStatusModal" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="form-edit-status">
-        <div class="modal-header">
-          <h5 class="modal-title" id="editStatusModalLabel">Editar Estado del Pedido</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="id">
-          <div class="mb-3">
-            <label for="edit-estado" class="form-label">Nuevo Estado</label>
-            <input class="form-control" id="edit-estado" name="estado" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success">Actualizar Estado</button>
         </div>
       </form>
     </div>
@@ -101,8 +75,8 @@
           <tr>
             <th>ID</th>
             <th>ID Usuario</th>
-            <th>ID Producto</th>
-            <th class="text-center">Cantidad</th>
+            <th class="text-center">Nº de Ítems</th>
+            <th class="text-end">Monto Total</th>
             <th>Estado</th>
             <th class="text-end">Acciones</th>
           </tr>
@@ -120,11 +94,7 @@
   const pedidoModalEl = document.getElementById('pedidoModal');
   const pedidoModal = new bootstrap.Modal(pedidoModalEl);
   const pedidoModalLabel = document.getElementById('pedidoModalLabel');
-
-  const editStatusModalEl = document.getElementById('editStatusModal');
-  const editStatusModal = new bootstrap.Modal(editStatusModalEl);
-  const editStatusForm = document.getElementById('form-edit-status');
-  const editStatusModalLabel = document.getElementById('editStatusModalLabel');
+  const itemsContainer = document.getElementById('items-container');
 
   async function fetchPedidos() {
     try {
@@ -149,15 +119,16 @@
           <tr id="pedido-row-${p.id}">
             <td>${p.id ?? ''}</td>
             <td>${p.id_usuario ?? ''}</td>
-            <td>${p.id_producto ?? ''}</td>
-            <td class="text-center">${p.cantidad ?? ''}</td>
+            <td class="text-center">${p.items?.length ?? 0}</td>
+            <td class="text-end">${p.monto_total ? '$' + p.monto_total.toFixed(2) : 'N/A'}</td>
             <td>
               <span class="badge ${p.estado === 'completed' ? 'bg-success' : (p.estado === 'cancelled' ? 'bg-danger' : 'bg-secondary')}">
                 ${p.estado ?? ''}
               </span>
             </td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-secondary me-1" onclick='editPedido(${pedidoData})'>Editar</button>
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick='viewPedido(${pedidoData})' title="Ver Detalles">Ver</button>
+              <!-- El botón de pagar se mueve a la página de pagos -->
               <button class="btn btn-sm btn-outline-danger" onclick="deletePedido('${p.id}')">Eliminar</button>
             </td>
           </tr>`);
@@ -167,15 +138,21 @@
     }
   }
 
-  function editPedido(pedido) {
-    editStatusForm.id.value = pedido.id;
-    editStatusForm.estado.value = pedido.estado;
-    editStatusModalLabel.textContent = `Editando Estado del Pedido #${pedido.id}`;
-    editStatusModal.show();
+  function viewPedido(pedido) {
+    // Por ahora, 'Ver' simplemente abre el modal de creación.
+    // En una implementación completa, mostraría los detalles del pedido.
+    alert(`Detalles del Pedido #${pedido.id}:\n\n` +
+      `Usuario: ${pedido.id_usuario}\n` +
+      `Monto Total: $${pedido.monto_total.toFixed(2)}\n` +
+      `Estado: ${pedido.estado}\n` +
+      `Ítems: ${pedido.items.length}`
+    );
   }
 
   function resetForm() {
     form.reset();
+    itemsContainer.innerHTML = ''; // Limpiar ítems
+    addItemRow(); // Añadir la primera fila
     pedidoModalLabel.textContent = 'Crear Nuevo Pedido';
     document.getElementById('btn-submit').textContent = 'Crear Pedido';
   }
@@ -215,14 +192,28 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
+    const items = [];
+    const itemRows = itemsContainer.querySelectorAll('.item-row');
+    itemRows.forEach(row => {
+      const id_producto = row.querySelector('input[name="id_producto[]"]').value;
+      const cantidad = row.querySelector('input[name="cantidad[]"]').value;
+      if (id_producto && cantidad) {
+        items.push({
+          id_producto: parseInt(id_producto),
+          cantidad: parseInt(cantidad)
+        });
+      }
+    });
+
+    if (items.length === 0) {
+      showToast('Debe añadir al menos un producto al pedido.', 'warning');
+      return;
+    }
+
     const payload = {
       id_usuario: parseInt(fd.get('id_usuario')),
-      id_producto: parseInt(fd.get('id_producto')),
-      cantidad: parseInt(fd.get('cantidad')),
-      monto_total: Math.round(parseFloat(fd.get('monto_total')) * 100), // Enviar como centavos (entero)
+      items: items
     };
-
-    let newOrder; // Variable para guardar el nuevo pedido
 
     try {
       const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/`, {
@@ -236,29 +227,7 @@
         throw new Error(`Error al crear pedido: ${errorData.detail || res.statusText}`);
       }
 
-      newOrder = await res.json(); // Guardamos la respuesta del pedido creado
       showToast('Pedido creado con éxito.', 'success');
-
-      // --- INICIO: Lógica para crear el pago automáticamente ---
-      if (newOrder && newOrder.id) {
-        const pagoPayload = {
-          id_pedido: newOrder.id,
-          id_usuario: newOrder.id_usuario,
-          monto: Math.round(newOrder.monto_total * 100), // Convertir a centavos
-          metodo_pago: 'pending_selection' // Un método de pago temporal
-        };
-
-        // No necesitamos manejar el error aquí de forma crítica, pero es bueno saber si falló.
-        fetch(`${GATEWAY_URL}/api/v1/pagos/`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify(pagoPayload)
-        }).then(res => {
-          if (res.ok) showToast('Registro de pago asociado creado.', 'info');
-          else showToast('No se pudo crear el registro de pago asociado.', 'warning');
-        });
-      }
-      // --- FIN: Lógica para crear el pago automáticamente ---
 
       pedidoModal.hide();
       fetchPedidos();
@@ -267,29 +236,27 @@
     }
   });
 
-  editStatusForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const id = fd.get('id');
-    const payload = { estado: fd.get('estado') };
+  function addItemRow() {
+    const itemIndex = itemsContainer.children.length;
+    const itemRow = document.createElement('div');
+    itemRow.className = 'row g-2 mb-2 item-row align-items-end';
+    itemRow.innerHTML = `
+      <div class="col-md-6">
+        <label class="form-label form-label-sm">ID Producto</label>
+        <input class="form-control form-control-sm" name="id_producto[]" type="number" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label form-label-sm">Cantidad</label>
+        <input class="form-control form-control-sm" name="cantidad[]" type="number" value="1" min="1" required>
+      </div>
+      <div class="col-md-2">
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.parentElement.remove()">X</button>
+      </div>
+    `;
+    itemsContainer.appendChild(itemRow);
+  }
 
-    try {
-      const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/${id}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(`Error al actualizar pedido: ${errorData.detail || res.statusText}`);
-      }
-      showToast('Pedido actualizado con éxito.', 'success');
-      editStatusModal.hide();
-      fetchPedidos();
-    } catch (error) {
-      showToast(error.message, 'danger');
-    }
-  });
+  document.getElementById('btn-add-item').addEventListener('click', addItemRow);
 
   pedidoModalEl.addEventListener('hidden.bs.modal', resetForm);
 
@@ -297,9 +264,11 @@
     pedidoModal.show();
   });
 
-  window.editPedido = editPedido;
+  window.viewPedido = viewPedido;
   window.deletePedido = deletePedido;
   document.getElementById('btn-refresh').addEventListener('click', fetchPedidos);
   fetchPedidos();
+  // Añadir la primera fila de ítem al cargar la página
+  addItemRow();
 </script>
 {% endblock %}

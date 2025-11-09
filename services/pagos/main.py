@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException
 import os
 import httpx
+from datetime import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -52,40 +53,8 @@ def get_pagos(db: Session = Depends(get_db)):
 
 @router.post("/", response_model=PaymentRead)
 async def create_payment(payment: PaymentCreate, db: Session = Depends(get_db)):
-    # --- INICIO: Validación de existencia y pertenencia del pedido ---
-    async with httpx.AsyncClient() as client:
-        try:
-            # 1. Verificar si el pedido existe
-            url = f"{settings.PEDIDOS_SERVICE_URL}/api/v1/pedidos/{payment.id_pedido}"
-            response = await client.get(url)
-            response.raise_for_status()
-            pedido_data = response.json()
-
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"El pedido con id '{payment.id_pedido}' no existe.",
-                )
-            raise HTTPException(
-                status_code=e.response.status_code,
-                detail="Error al verificar el pedido.",
-            )
-        except httpx.RequestError:
-            raise HTTPException(
-                status_code=503,
-                detail="No se pudo comunicar con el servicio de pedidos.",
-            )
-
-    # 2. Validar que el usuario del pago es el mismo que el del pedido
-    if pedido_data.get("id_usuario") != payment.id_usuario:
-        raise HTTPException(
-            status_code=403,
-            detail=f"El usuario (id: {payment.id_usuario}) no tiene permiso para pagar este pedido, que pertenece al usuario (id: {pedido_data.get('id_usuario')}).",
-        )
-
-    # --- FIN: Validación ---
-
+    # Este endpoint ahora es llamado por el servicio de pedidos para crear un registro PENDIENTE.
+    # Las validaciones complejas se mueven al proceso de pago real (PUT).
     new_payment = Payment(**payment.dict())
     db.add(new_payment)
     db.commit()
@@ -94,14 +63,60 @@ async def create_payment(payment: PaymentCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{id}", response_model=PaymentRead)
-def update_pago(id: int, pago: PaymentUpdate, db: Session = Depends(get_db)):
+async def update_pago(id: int, pago: PaymentUpdate, db: Session = Depends(get_db)):
     db_pago = db.query(Payment).filter(Payment.id == id).first()
     if not db_pago:
         raise HTTPException(status_code=404, detail="Pago no encontrado")
-    for key, value in pago.dict(exclude_unset=True).items():
-        setattr(db_pago, key, value)
+
+    # --- INICIO: Lógica de procesamiento de pago ---
+    # 1. Seguridad: El monto pagado debe ser >= al monto registrado en el pago pendiente.
+    if pago.monto < db_pago.monto:
+        raise HTTPException(
+            status_code=400,
+            detail=f"El monto a pagar ({pago.monto}) no puede ser menor al monto del pedido ({db_pago.monto}).",
+        )
+
+    # Actualizamos los campos del pago
+    db_pago.monto = pago.monto  # Actualiza por si pagó de más
+    db_pago.metodo_pago = pago.metodo_pago
+    db_pago.estado = "completed"  # Se marca como completado
+    db_pago.fecha_pago = datetime.utcnow()  # Se registra la fecha del pago
+
+    # --- INICIO: Notificar al servicio de pedidos para actualizar el estado ---
+    try:
+        async with httpx.AsyncClient() as client:
+            order_update_payload = {"estado": "completed"}
+            url = f"{settings.PEDIDOS_SERVICE_URL}/api/v1/pedidos/{db_pago.id_pedido}"
+            await client.put(url, json=order_update_payload)
+    except (httpx.RequestError, httpx.HTTPStatusError) as e:
+        # Si la notificación falla, no revertimos el pago, pero es importante registrarlo.
+        # En un sistema de producción, esto podría encolarse para un reintento.
+        print(
+            f"ADVERTENCIA: El pago {db_pago.id} se completó, pero no se pudo actualizar el estado del pedido {db_pago.id_pedido}. Error: {e}"
+        )
+    # --- FIN: Notificación ---
+
     db.commit()
     db.refresh(db_pago)
+    return db_pago
+
+
+@router.put("/by-order/{order_id}", response_model=PaymentRead)
+def update_pago_by_order_id(
+    order_id: int, pago_update: PaymentUpdate, db: Session = Depends(get_db)
+):
+    """Actualiza un pago usando el ID del pedido. Usado por el servicio de pedidos."""
+    db_pago = db.query(Payment).filter(Payment.id_pedido == order_id).first()
+    if not db_pago:
+        raise HTTPException(
+            status_code=404, detail=f"No se encontró un pago para el pedido {order_id}"
+        )
+
+    # Solo actualizamos el monto, ya que es lo único que cambia si se edita la cantidad del pedido.
+    if pago_update.monto is not None:
+        db_pago.monto = pago_update.monto
+        db.commit()
+        db.refresh(db_pago)
     return db_pago
 
 

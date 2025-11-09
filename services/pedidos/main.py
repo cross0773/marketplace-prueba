@@ -3,7 +3,7 @@ import os
 import httpx
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-from models import Order, OrderCreate, OrderRead, OrderUpdate, Base
+from models import Order, OrderItem, OrderCreate, OrderRead, OrderUpdate, Base
 from typing import List
 from common.config import settings  # Importar la configuración centralizada
 
@@ -50,49 +50,99 @@ def get_order(id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=OrderRead)
 async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
-    # --- INICIO: Validación de existencia del producto ---
+    monto_total_calculado = 0
+    order_items_data = []
+
+    # 1. Iterar sobre los ítems del pedido para validar y calcular el total
     async with httpx.AsyncClient() as client:
-        try:
-            # 1. Verificar si el producto existe
-            url = (
-                f"{settings.PRODUCTOS_SERVICE_URL}/api/v1/productos/{order.id_producto}"
-            )
-            response = await client.get(url)
+        for item in order.items:
+            try:
+                # Verificar si el producto existe y obtener su precio
+                url = f"{settings.PRODUCTOS_SERVICE_URL}/api/v1/productos/{item.id_producto}"
+                response = await client.get(url)
+                response.raise_for_status()
+                producto_data = response.json()
+                precio_producto = producto_data.get("precio", 0)
 
-            # Lanza una excepción si la respuesta es 4xx o 5xx
-            response.raise_for_status()
+                # Calcular subtotal y añadir al total
+                subtotal = precio_producto * item.cantidad
+                monto_total_calculado += subtotal
 
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"El producto con id '{order.id_producto}' no existe.",
+                # Guardar datos para crear OrderItem más tarde
+                order_items_data.append(
+                    {
+                        "id_producto": item.id_producto,
+                        "cantidad": item.cantidad,
+                        "precio_unitario": precio_producto,
+                    }
                 )
-            raise HTTPException(
-                status_code=e.response.status_code,
-                detail="Error al verificar el producto.",
-            )
-        except httpx.RequestError:
-            raise HTTPException(
-                status_code=503,
-                detail="No se pudo comunicar con el servicio de productos.",
-            )
-    # --- FIN: Validación ---
 
-    db_order = Order(**order.dict())
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"El producto con id '{item.id_producto}' no existe.",
+                    )
+                raise HTTPException(
+                    status_code=e.response.status_code,
+                    detail=f"Error al verificar el producto {item.id_producto}.",
+                )
+            except httpx.RequestError:
+                raise HTTPException(
+                    status_code=503,
+                    detail="No se pudo comunicar con el servicio de productos.",
+                )
+
+    # 2. Crear el registro principal del Pedido (Order)
+    db_order = Order(
+        id_usuario=order.id_usuario, monto_total=monto_total_calculado, estado="pending"
+    )
     db.add(db_order)
     db.commit()
     db.refresh(db_order)
+
+    # 3. Crear los registros de los Ítems del Pedido (OrderItem)
+    for item_data in order_items_data:
+        db_item = OrderItem(**item_data, id_pedido=db_order.id)
+        db.add(db_item)
+    db.commit()
+    db.refresh(db_order)  # Refrescar para cargar la relación 'items'
+
+    # --- INICIO: Notificar al servicio de pagos para crear un registro pendiente ---
+    try:
+        async with httpx.AsyncClient() as client:
+            pago_payload = {
+                "id_pedido": db_order.id,
+                "id_usuario": db_order.id_usuario,
+                "monto": db_order.monto_total,
+                "estado": "pending",  # El pago se crea como pendiente
+                "metodo_pago": "N/A",
+            }
+            url = f"{settings.PAGOS_SERVICE_URL}/api/v1/pagos/"
+            await client.post(url, json=pago_payload)
+    except (httpx.RequestError, httpx.HTTPStatusError) as e:
+        # Si la creación del pago pendiente falla, el pedido se creó pero queda inconsistente.
+        # En un sistema real, esto requeriría una transacción distribuida o un mecanismo de compensación.
+        # Por ahora, solo lo advertimos.
+        print(
+            f"ADVERTENCIA: El pedido {db_order.id} se creó, pero no se pudo registrar el pago pendiente. Error: {e}"
+        )
+    # --- FIN: Notificación ---
+
     return db_order
 
 
 @router.put("/{id}", response_model=OrderRead)
-def update_order(id: int, order: OrderUpdate, db: Session = Depends(get_db)):
+async def update_order(id: int, order: OrderUpdate, db: Session = Depends(get_db)):
     db_order = db.query(Order).filter(Order.id == id).first()
     if not db_order:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    # Simplificado: este endpoint ahora solo actualiza campos simples como el estado.
+    # La lógica para editar ítems de un pedido es más compleja y se omite por ahora.
     for key, value in order.dict(exclude_unset=True).items():
         setattr(db_order, key, value)
+
     db.commit()
     db.refresh(db_order)
     return db_order
