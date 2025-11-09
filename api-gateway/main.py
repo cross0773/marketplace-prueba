@@ -94,23 +94,27 @@ async def forward_request(service_name: str, path: str, request: Request):
 
 
 # Rutas genéricas que capturan todas las peticiones
-@router.get("/{service_name}/{path:path}")
-async def get_route(service_name: str, path: str, request: Request):
+@router.get("/{path:path}")
+async def get_route(path: str, request: Request):
+    service_name = path.split("/")[0]
     return await forward_request(service_name, path, request)
 
 
-@router.post("/{service_name}/{path:path}")
-async def post_route(service_name: str, path: str, request: Request):
+@router.post("/{path:path}")
+async def post_route(path: str, request: Request):
+    service_name = path.split("/")[0]
     return await forward_request(service_name, path, request)
 
 
-@router.put("/{service_name}/{path:path}")
-async def put_route(service_name: str, path: str, request: Request):
+@router.put("/{path:path}")
+async def put_route(path: str, request: Request):
+    service_name = path.split("/")[0]
     return await forward_request(service_name, path, request)
 
 
-@router.delete("/{service_name}/{path:path}")
-async def delete_route(service_name: str, path: str, request: Request):
+@router.delete("/{path:path}")
+async def delete_route(path: str, request: Request):
+    service_name = path.split("/")[0]
     return await forward_request(service_name, path, request)
 
 

@@ -36,7 +36,7 @@ class OrderBase(BaseModel):
     id_producto: int
     cantidad: int
     monto_total: int
-    estado: str
+    estado: str = "pending"
     activo: bool = True
 
 

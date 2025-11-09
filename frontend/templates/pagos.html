@@ -32,16 +32,8 @@
               <input class="form-control" name="monto" type="number" step="0.01" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label">Estado</label>
-              <select class="form-select" name="estado" required>
-                <option value="completed">Completado</option>
-                <option value="pending">Pendiente</option>
-                <option value="failed">Fallido</option>
-              </select>
-            </div>
-            <div class="col-md-12">
               <label class="form-label">Método de Pago</label>
-              <select class="form-select" name="metodo_pago">
+              <select class="form-select" name="metodo_pago" required>
                 <option value="credit_card">Tarjeta de Crédito</option>
                 <option value="paypal">PayPal</option>
                 <option value="pse">PSE</option>
@@ -92,8 +84,8 @@
             <th>ID Usuario</th>
             <th class="text-end">Monto</th>
             <th>Estado</th>
-            <th class="text-end">Acciones</th>
             <th>Método de Pago</th>
+            <th class="text-end">Acciones</th>
           </tr>
         </thead>
         <tbody id="tbody-pagos"></tbody>
@@ -139,13 +131,13 @@
             <td>${p.id ?? ''}</td>
             <td>${p.id_pedido ?? ''}</td>
             <td>${p.id_usuario ?? ''}</td>
-            <td class="text-end">${p.monto?.toFixed ? p.monto.toFixed(2) : p.monto}</td>
+            <td class="text-end">${(p.monto / 100).toFixed(2)}</td>
             <td><span class="badge ${statusClass}">${p.estado ?? ''}</span></td>
+            <td>${p.metodo_pago ?? 'N/A'}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-outline-secondary me-1" onclick='editPago(${pagoData})'>Editar</button>
               <button class="btn btn-sm btn-outline-danger" onclick="deletePago('${p.id}')">Eliminar</button>
             </td>
-            <td>${p.metodo_pago ?? 'N/A'}</td>
           </tr>`);
       });
     } catch (error) {
@@ -157,8 +149,7 @@
     form.id.value = pago.id;
     form.id_pedido.value = pago.id_pedido;
     form.id_usuario.value = pago.id_usuario;
-    form.monto.value = pago.monto;
-    form.estado.value = pago.estado;
+    form.monto.value = (pago.monto / 100).toFixed(2); // Convertir de centavos a pesos para el form
     form.metodo_pago.value = pago.metodo_pago;
 
     pagoModalLabel.textContent = `Editando Pago #${pago.id}`;
@@ -217,7 +208,6 @@
       id_pedido: parseInt(fd.get('id_pedido')),
       id_usuario: parseInt(fd.get('id_usuario')),
       monto: Math.round(parseFloat(fd.get('monto')) * 100), // Convertir a centavos (entero)
-      estado: fd.get('estado'),
       metodo_pago: fd.get('metodo_pago')
     };
 

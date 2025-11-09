@@ -30,13 +30,9 @@
               <label class="form-label">Cantidad</label>
               <input class="form-control" name="cantidad" type="number" value="1" min="1" required>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-8">
               <label class="form-label">Monto Total</label>
               <input class="form-control" name="monto_total" type="number" step="0.01" required>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Estado</label>
-              <input class="form-control" name="estado" value="pending" required>
             </div>
           </div>
         </div>
@@ -223,9 +219,10 @@
       id_usuario: parseInt(fd.get('id_usuario')),
       id_producto: parseInt(fd.get('id_producto')),
       cantidad: parseInt(fd.get('cantidad')),
-      monto_total: parseFloat(fd.get('monto_total')),
-      estado: fd.get('estado')
+      monto_total: Math.round(parseFloat(fd.get('monto_total')) * 100), // Enviar como centavos (entero)
     };
+
+    let newOrder; // Variable para guardar el nuevo pedido
 
     try {
       const res = await fetch(`${GATEWAY_URL}/api/v1/pedidos/`, {
@@ -233,11 +230,36 @@
         headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(`Error al crear pedido: ${errorData.detail || res.statusText}`);
       }
+
+      newOrder = await res.json(); // Guardamos la respuesta del pedido creado
       showToast('Pedido creado con éxito.', 'success');
+
+      // --- INICIO: Lógica para crear el pago automáticamente ---
+      if (newOrder && newOrder.id) {
+        const pagoPayload = {
+          id_pedido: newOrder.id,
+          id_usuario: newOrder.id_usuario,
+          monto: Math.round(newOrder.monto_total * 100), // Convertir a centavos
+          metodo_pago: 'pending_selection' // Un método de pago temporal
+        };
+
+        // No necesitamos manejar el error aquí de forma crítica, pero es bueno saber si falló.
+        fetch(`${GATEWAY_URL}/api/v1/pagos/`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(pagoPayload)
+        }).then(res => {
+          if (res.ok) showToast('Registro de pago asociado creado.', 'info');
+          else showToast('No se pudo crear el registro de pago asociado.', 'warning');
+        });
+      }
+      // --- FIN: Lógica para crear el pago automáticamente ---
+
       pedidoModal.hide();
       fetchPedidos();
     } catch (error) {

@@ -33,7 +33,7 @@ def get_db():
         db.close()
 
 
-router = APIRouter()
+router = APIRouter(prefix="/pagos", tags=["pagos"])
 
 
 @app.get("/health")

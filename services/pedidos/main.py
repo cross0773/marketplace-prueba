@@ -23,7 +23,7 @@ def get_db():
 
 
 app = FastAPI()
-router = APIRouter()
+router = APIRouter(prefix="/pedidos", tags=["pedidos"])
 
 
 # Endpoint de salud

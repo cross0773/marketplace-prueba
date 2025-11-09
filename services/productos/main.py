@@ -35,7 +35,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/productos", tags=["productos"])
 
 
 @app.get("/health")
